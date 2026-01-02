@@ -195,6 +195,10 @@ This tool is not affiliated with, endorsed by, or sponsored by Apple Inc. App St
 
 Users are responsible for complying with Apple's [App Store Connect API Terms of Service](https://developer.apple.com/support/terms/).
 
+## Documentation
+
+Full documentation available at [docs.yooz.live/tools/yooz-asc](https://docs.yooz.live/tools/yooz-asc).
+
 ## License
 
 BSD 3-Clause License - see [LICENSE](LICENSE) for details.
