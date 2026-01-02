@@ -4,8 +4,6 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from yooz_asc.api.auth import AuthManager, Credentials
 
 
@@ -63,7 +61,9 @@ class TestAuthManager:
 
     def test_auto_no_credentials(self) -> None:
         """Test auto() with no credentials available."""
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("yooz_asc.api.auth.Credentials.from_file", return_value=None):
-                auth = AuthManager.auto()
-                assert not auth.is_authenticated
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("yooz_asc.api.auth.Credentials.from_file", return_value=None),
+        ):
+            auth = AuthManager.auto()
+            assert not auth.is_authenticated

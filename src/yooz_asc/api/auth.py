@@ -47,7 +47,7 @@ class Credentials:
         return cls(issuer_id=issuer_id, key_id=key_id, private_key=private_key)
 
     @classmethod
-    def from_file(cls, path: Optional[Path] = None) -> Optional["Credentials"]:
+    def from_file(cls, path: Path | None = None) -> Optional["Credentials"]:
         """Load credentials from config file."""
         config_path = path or CREDENTIALS_FILE
         if not config_path.exists():
@@ -92,11 +92,11 @@ private_key_path={private_key_path}
 class AuthManager:
     """Manages authentication tokens for App Store Connect API."""
 
-    def __init__(self, credentials: Optional[Credentials] = None) -> None:
+    def __init__(self, credentials: Credentials | None = None) -> None:
         """Initialize with optional credentials."""
         self._credentials = credentials
-        self._token: Optional[str] = None
-        self._token_expiry: Optional[datetime] = None
+        self._token: str | None = None
+        self._token_expiry: datetime | None = None
 
     @classmethod
     def from_env(cls) -> "AuthManager":
@@ -104,7 +104,7 @@ class AuthManager:
         return cls(Credentials.from_env())
 
     @classmethod
-    def from_file(cls, path: Optional[Path] = None) -> "AuthManager":
+    def from_file(cls, path: Path | None = None) -> "AuthManager":
         """Create AuthManager from config file."""
         return cls(Credentials.from_file(path))
 

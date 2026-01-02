@@ -1,7 +1,6 @@
 """App management commands."""
 
 import asyncio
-from typing import Optional
 
 import typer
 from rich.console import Console

@@ -1,12 +1,10 @@
 """Main CLI entry point for yooz-asc."""
 
-from typing import Optional
-
 import typer
 from rich.console import Console
 
 from yooz_asc import __version__
-from yooz_asc.commands import apps, auth, subscriptions, testflight
+from yooz_asc.commands import apps, auth, bulk, subscriptions, testflight
 
 app = typer.Typer(
     name="asc",
@@ -22,6 +20,7 @@ app.add_typer(auth.app, name="auth", help="Manage authentication")
 app.add_typer(apps.app, name="apps", help="Manage apps")
 app.add_typer(subscriptions.app, name="subscriptions", help="Manage subscriptions and pricing")
 app.add_typer(testflight.app, name="testflight", help="Manage TestFlight builds and testers")
+app.add_typer(bulk.app, name="bulk", help="Bulk operations from YAML configuration")
 
 
 def version_callback(value: bool) -> None:
@@ -33,7 +32,7 @@ def version_callback(value: bool) -> None:
 
 @app.callback()
 def main(
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None,
         "--version",
         "-v",

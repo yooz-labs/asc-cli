@@ -1,6 +1,6 @@
 """App Store Connect API client."""
 
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -12,10 +12,10 @@ class AppStoreConnectClient:
 
     BASE_URL = "https://api.appstoreconnect.apple.com/v1"
 
-    def __init__(self, auth: Optional[AuthManager] = None) -> None:
+    def __init__(self, auth: AuthManager | None = None) -> None:
         """Initialize client with optional auth manager."""
         self._auth = auth or AuthManager.auto()
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     @property
     def auth(self) -> AuthManager:
@@ -46,7 +46,7 @@ class AppStoreConnectClient:
     async def get(
         self,
         endpoint: str,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Make a GET request."""
         client = await self._get_client()
@@ -106,7 +106,7 @@ class AppStoreConnectClient:
         result = await self.get("apps")
         return result.get("data", [])  # type: ignore[no-any-return]
 
-    async def get_app(self, bundle_id: str) -> Optional[dict[str, Any]]:
+    async def get_app(self, bundle_id: str) -> dict[str, Any] | None:
         """Get app by bundle ID."""
         result = await self.get("apps", {"filter[bundleId]": bundle_id})
         apps = result.get("data", [])
@@ -132,13 +132,153 @@ class AppStoreConnectClient:
         result = await self.get(f"subscriptions/{subscription_id}")
         return result.get("data", {})  # type: ignore[no-any-return]
 
-    async def list_price_points(self, subscription_id: str) -> list[dict[str, Any]]:
-        """List price points for a subscription."""
-        result = await self.get(
-            f"subscriptions/{subscription_id}/pricePoints",
-            {"filter[territory]": "USA", "include": "territory"},
+    async def list_price_points(
+        self,
+        subscription_id: str,
+        territory: str | None = None,
+        include_territory: bool = True,
+    ) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+        """List price points for a subscription.
+
+        Args:
+            subscription_id: The subscription ID
+            territory: Optional territory filter (e.g., "USA", "GBR")
+            include_territory: Whether to include territory details
+
+        Returns:
+            Tuple of (price_points, included_territories_map)
+        """
+        params: dict[str, Any] = {"limit": 200}
+        if territory:
+            params["filter[territory]"] = territory
+        if include_territory:
+            params["include"] = "territory"
+
+        all_price_points: list[dict[str, Any]] = []
+        included_map: dict[str, dict[str, Any]] = {}
+        next_url: str | None = f"subscriptions/{subscription_id}/pricePoints"
+
+        while next_url:
+            # Handle both relative and absolute URLs
+            if next_url.startswith("http"):
+                # Extract the path from full URL
+                from urllib.parse import urlparse
+
+                parsed = urlparse(next_url)
+                endpoint = parsed.path.replace("/v1/", "")
+                if parsed.query:
+                    endpoint += f"?{parsed.query}"
+                result = await self.get(endpoint)
+            else:
+                result = await self.get(
+                    next_url,
+                    params if next_url == f"subscriptions/{subscription_id}/pricePoints" else None,
+                )
+
+            all_price_points.extend(result.get("data", []))
+
+            # Build map of included territories
+            for inc in result.get("included", []):
+                if inc.get("type") == "territories":
+                    included_map[inc["id"]] = inc
+
+            # Check for next page
+            links = result.get("links", {})
+            next_url = links.get("next")
+
+        return all_price_points, included_map
+
+    async def list_all_price_points_by_territory(
+        self,
+        subscription_id: str,
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Get all price points organized by territory.
+
+        Returns:
+            Dict mapping territory ID to list of price points
+        """
+        price_points, _ = await self.list_price_points(subscription_id)
+
+        by_territory: dict[str, list[dict[str, Any]]] = {}
+        for pp in price_points:
+            territory_data = pp.get("relationships", {}).get("territory", {}).get("data", {})
+            territory_id = territory_data.get("id", "UNKNOWN")
+            if territory_id not in by_territory:
+                by_territory[territory_id] = []
+            by_territory[territory_id].append(pp)
+
+        return by_territory
+
+    async def find_price_point_by_usd(
+        self,
+        subscription_id: str,
+        usd_price: float,
+        territory: str = "USA",
+    ) -> dict[str, Any] | None:
+        """Find a price point matching the given USD price.
+
+        Args:
+            subscription_id: The subscription ID
+            usd_price: Target price in USD (e.g., 2.99)
+            territory: Territory to search in (default USA)
+
+        Returns:
+            The matching price point or None
+        """
+        price_points, _ = await self.list_price_points(
+            subscription_id, territory=territory, include_territory=False
         )
-        return result.get("data", [])  # type: ignore[no-any-return]
+
+        # Find exact or closest match
+        target = str(usd_price)
+        for pp in price_points:
+            customer_price = pp.get("attributes", {}).get("customerPrice", "")
+            if customer_price == target:
+                return pp
+
+        return None
+
+    async def find_equalizing_price_points(
+        self,
+        subscription_id: str,
+        base_price_point_id: str,
+    ) -> list[dict[str, Any]]:
+        """Find price points in other territories that equalize to a base price point.
+
+        This uses Apple's automatic price equalization feature.
+
+        Args:
+            subscription_id: The subscription ID
+            base_price_point_id: The base price point ID (usually USA)
+
+        Returns:
+            List of equalizing price points for all territories
+        """
+        result = await self.get(
+            f"subscriptionPricePoints/{base_price_point_id}/equalizations",
+            {"limit": 200, "include": "territory"},
+        )
+
+        all_points: list[dict[str, Any]] = []
+        all_points.extend(result.get("data", []))
+
+        # Handle pagination
+        links = result.get("links", {})
+        next_url = links.get("next")
+
+        while next_url:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(next_url)
+            endpoint = parsed.path.replace("/v1/", "")
+            if parsed.query:
+                endpoint += f"?{parsed.query}"
+            result = await self.get(endpoint)
+            all_points.extend(result.get("data", []))
+            links = result.get("links", {})
+            next_url = links.get("next")
+
+        return all_points
 
     async def list_subscription_prices(self, subscription_id: str) -> list[dict[str, Any]]:
         """List current prices for a subscription."""
@@ -149,7 +289,7 @@ class AppStoreConnectClient:
         self,
         subscription_id: str,
         price_point_id: str,
-        start_date: Optional[str] = None,
+        start_date: str | None = None,
         preserve_current_price: bool = False,
     ) -> dict[str, Any]:
         """Create/update a subscription price."""
@@ -158,9 +298,7 @@ class AppStoreConnectClient:
                 "type": "subscriptionPrices",
                 "attributes": {},
                 "relationships": {
-                    "subscription": {
-                        "data": {"type": "subscriptions", "id": subscription_id}
-                    },
+                    "subscription": {"data": {"type": "subscriptions", "id": subscription_id}},
                     "subscriptionPricePoint": {
                         "data": {"type": "subscriptionPricePoints", "id": price_point_id}
                     },
@@ -187,7 +325,7 @@ class AppStoreConnectClient:
         offer_mode: str,  # "freeTrial", "payAsYouGo", "payUpFront"
         duration: str,  # e.g., "P1W", "P2W", "P1M", "P3M"
         number_of_periods: int = 1,
-        subscription_price_point_id: Optional[str] = None,
+        subscription_price_point_id: str | None = None,
     ) -> dict[str, Any]:
         """Create an introductory offer."""
         data: dict[str, Any] = {
@@ -199,12 +337,8 @@ class AppStoreConnectClient:
                     "numberOfPeriods": number_of_periods,
                 },
                 "relationships": {
-                    "subscription": {
-                        "data": {"type": "subscriptions", "id": subscription_id}
-                    },
-                    "territory": {
-                        "data": {"type": "territories", "id": territory_id}
-                    },
+                    "subscription": {"data": {"type": "subscriptions", "id": subscription_id}},
+                    "territory": {"data": {"type": "territories", "id": territory_id}},
                 },
             }
         }

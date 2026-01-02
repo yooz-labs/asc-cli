@@ -2,14 +2,13 @@
 
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from yooz_asc.api.auth import AuthManager, Credentials, CONFIG_DIR
+from yooz_asc.api.auth import CONFIG_DIR, AuthManager, Credentials
 
 app = typer.Typer(help="Manage authentication credentials.")
 console = Console()
@@ -17,9 +16,9 @@ console = Console()
 
 @app.command()
 def login(
-    issuer_id: Optional[str] = typer.Option(None, "--issuer-id", "-i", help="Issuer ID"),
-    key_id: Optional[str] = typer.Option(None, "--key-id", "-k", help="Key ID"),
-    key_path: Optional[Path] = typer.Option(None, "--key-path", "-p", help="Path to .p8 file"),
+    issuer_id: str | None = typer.Option(None, "--issuer-id", "-i", help="Issuer ID"),
+    key_id: str | None = typer.Option(None, "--key-id", "-k", help="Key ID"),
+    key_path: Path | None = typer.Option(None, "--key-path", "-p", help="Path to .p8 file"),
 ) -> None:
     """Configure authentication credentials.
 

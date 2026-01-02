@@ -1,11 +1,7 @@
 """TestFlight management commands."""
 
-import asyncio
-from typing import Optional
-
 import typer
 from rich.console import Console
-from rich.table import Table
 
 app = typer.Typer(help="Manage TestFlight builds and testers.")
 console = Console()
@@ -72,7 +68,7 @@ def list_testers(
 def add_tester(
     bundle_id: str = typer.Argument(..., help="App bundle ID"),
     email: str = typer.Option(..., "--email", "-e", help="Tester email"),
-    group: Optional[str] = typer.Option(None, "--group", "-g", help="Beta group name"),
+    group: str | None = typer.Option(None, "--group", "-g", help="Beta group name"),
 ) -> None:
     """Add a beta tester."""
     # TODO: Implement
