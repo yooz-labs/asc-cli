@@ -359,6 +359,53 @@ class AppStoreConnectClient:
         result = await self.get("territories", {"limit": 200})
         return result.get("data", [])  # type: ignore[no-any-return]
 
+    async def get_subscription_availability(
+        self,
+        subscription_id: str,
+    ) -> dict[str, Any] | None:
+        """Get subscription availability settings."""
+        try:
+            result = await self.get(
+                f"subscriptions/{subscription_id}/subscriptionAvailability",
+                {"include": "availableTerritories"},
+            )
+            return result.get("data")
+        except Exception:
+            return None
+
+    async def set_subscription_availability(
+        self,
+        subscription_id: str,
+        territory_ids: list[str],
+        available_in_new_territories: bool = True,
+    ) -> dict[str, Any]:
+        """Set subscription availability for territories.
+
+        Args:
+            subscription_id: The subscription ID
+            territory_ids: List of territory IDs to make available
+            available_in_new_territories: Auto-enable in new territories
+
+        Returns:
+            The created/updated availability
+        """
+        data: dict[str, Any] = {
+            "data": {
+                "type": "subscriptionAvailabilities",
+                "attributes": {
+                    "availableInNewTerritories": available_in_new_territories,
+                },
+                "relationships": {
+                    "subscription": {"data": {"type": "subscriptions", "id": subscription_id}},
+                    "availableTerritories": {
+                        "data": [{"type": "territories", "id": tid} for tid in territory_ids]
+                    },
+                },
+            }
+        }
+
+        return await self.post("subscriptionAvailabilities", data)
+
 
 class APIError(Exception):
     """API request error."""

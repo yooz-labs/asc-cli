@@ -39,6 +39,29 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
+class SubscriptionPeriod(str, Enum):
+    """Billing periods for subscriptions."""
+
+    ONE_WEEK = "1w"
+    ONE_MONTH = "1m"
+    TWO_MONTHS = "2m"
+    THREE_MONTHS = "3m"
+    SIX_MONTHS = "6m"
+    ONE_YEAR = "1y"
+
+    def to_api_value(self) -> str:
+        """Convert to App Store Connect API value."""
+        mapping = {
+            "1w": "ONE_WEEK",
+            "1m": "ONE_MONTH",
+            "2m": "TWO_MONTHS",
+            "3m": "THREE_MONTHS",
+            "6m": "SIX_MONTHS",
+            "1y": "ONE_YEAR",
+        }
+        return mapping[self.value]
+
+
 class OfferType(str, Enum):
     """Types of introductory offers."""
 
@@ -84,6 +107,10 @@ class SubscriptionConfig(BaseModel):
 
     product_id: str = Field(..., description="App Store product ID")
     name: str | None = Field(None, description="Display name for the subscription")
+    period: SubscriptionPeriod | None = Field(
+        None,
+        description="Billing period: 1w, 1m, 2m, 3m, 6m, 1y (set if not already configured)",
+    )
     price_usd: float = Field(..., description="Base price in USD", ge=0)
     territories: list[str] | Literal["all"] = Field(
         "all",
@@ -163,6 +190,7 @@ subscriptions:
   # Pro Monthly subscription
   - product_id: com.example.myapp.pro.monthly
     name: Pro Monthly
+    period: 1m        # Billing period: 1w, 1m, 2m, 3m, 6m, 1y
     price_usd: 2.99
     territories: all  # Apply to all 175 territories
     equalize: true    # Use Apple's automatic price equalization

@@ -11,6 +11,7 @@ from yooz_asc.api.client import AppStoreConnectClient
 from yooz_asc.config.schema import (
     IntroductoryOffer,
     OfferType,
+    SubscriptionConfig,
     SubscriptionsConfig,
     generate_example_config,
 )
@@ -89,6 +90,23 @@ def apply_config(
                 subscription = all_subscriptions[sub_config.product_id]
                 subscription_id = subscription["id"]
 
+                # Set subscription period if specified and not already set
+                await _set_subscription_period(
+                    client,
+                    subscription_id,
+                    subscription,
+                    sub_config,
+                    config.dry_run,
+                )
+
+                # Set availability first (required before pricing)
+                await _set_availability(
+                    client,
+                    subscription_id,
+                    sub_config.territories,
+                    config.dry_run,
+                )
+
                 # Apply pricing
                 await _apply_pricing(
                     client,
@@ -113,6 +131,87 @@ def apply_config(
             await client.close()
 
     asyncio.run(_apply())
+
+
+async def _set_subscription_period(
+    client: AppStoreConnectClient,
+    subscription_id: str,
+    subscription: dict,
+    sub_config: SubscriptionConfig,
+    dry_run: bool,
+) -> None:
+    """Set subscription billing period if specified and not already set."""
+    from yooz_asc.api.client import APIError
+
+    if sub_config.period is None:
+        return  # No period specified in config
+
+    current_period = subscription.get("attributes", {}).get("subscriptionPeriod")
+    target_period = sub_config.period.to_api_value()
+
+    if current_period == target_period:
+        console.print(f"  [dim]Period already set to {target_period}[/dim]")
+        return
+
+    if current_period is not None:
+        console.print(
+            f"  [yellow]Period already set to {current_period}, "
+            f"cannot change to {target_period}[/yellow]"
+        )
+        return
+
+    console.print(f"  [dim]Setting period to {target_period}...[/dim]")
+
+    if dry_run:
+        console.print(f"  [yellow]Would set period to {target_period}[/yellow]")
+        return
+
+    try:
+        await client.patch(
+            f"subscriptions/{subscription_id}",
+            {
+                "data": {
+                    "type": "subscriptions",
+                    "id": subscription_id,
+                    "attributes": {"subscriptionPeriod": target_period},
+                }
+            },
+        )
+        console.print(f"  [green]Set period to {target_period}[/green]")
+    except APIError as e:
+        console.print(f"  [red]Period error:[/red] {e}")
+
+
+async def _set_availability(
+    client: AppStoreConnectClient,
+    subscription_id: str,
+    territories: list[str] | str,
+    dry_run: bool,
+) -> None:
+    """Set subscription availability for territories."""
+    console.print("  [dim]Setting availability...[/dim]")
+
+    # Get all territories if needed
+    if territories == "all":
+        all_terrs = await client.list_territories()
+        territory_ids = [t["id"] for t in all_terrs]
+    else:
+        territory_ids = [t.upper() for t in territories]
+
+    if dry_run:
+        n_terr = len(territory_ids)
+        console.print(f"  [yellow]Would set availability for {n_terr} territories[/yellow]")
+        return
+
+    try:
+        await client.set_subscription_availability(
+            subscription_id=subscription_id,
+            territory_ids=territory_ids,
+            available_in_new_territories=True,
+        )
+        console.print(f"  [green]Set availability for {len(territory_ids)} territories[/green]")
+    except Exception as e:
+        console.print(f"  [red]Availability error:[/red] {e}")
 
 
 async def _apply_pricing(
@@ -158,6 +257,7 @@ async def _apply_pricing(
 
     # Apply prices
     success = 0
+    errors = 0
     for pp in equalized_points:
         try:
             await client.create_subscription_price(
@@ -165,8 +265,10 @@ async def _apply_pricing(
                 price_point_id=pp["id"],
             )
             success += 1
-        except Exception:
-            pass  # Continue on error
+        except Exception as e:
+            errors += 1
+            if errors <= 3:
+                console.print(f"  [red]Price error:[/red] {e}")
 
     console.print(f"  [green]Set pricing for {success} territories[/green]")
 
@@ -180,10 +282,11 @@ async def _apply_offer(
     """Apply an introductory offer to a subscription."""
     from yooz_asc.commands.subscriptions import parse_duration
 
+    # App Store Connect API expects uppercase snake_case
     offer_mode_map = {
-        OfferType.FREE_TRIAL: "freeTrial",
-        OfferType.PAY_AS_YOU_GO: "payAsYouGo",
-        OfferType.PAY_UP_FRONT: "payUpFront",
+        OfferType.FREE_TRIAL: "FREE_TRIAL",
+        OfferType.PAY_AS_YOU_GO: "PAY_AS_YOU_GO",
+        OfferType.PAY_UP_FRONT: "PAY_UP_FRONT",
     }
 
     offer_mode = offer_mode_map[offer.type]
@@ -215,6 +318,7 @@ async def _apply_offer(
 
     # Create offers
     success = 0
+    errors = 0
     for territory_id in target_territories:
         try:
             await client.create_introductory_offer(
@@ -226,8 +330,10 @@ async def _apply_offer(
                 subscription_price_point_id=price_point_id,
             )
             success += 1
-        except Exception:
-            pass  # Continue on error
+        except Exception as e:
+            errors += 1
+            if errors <= 3:
+                console.print(f"  [red]Offer error ({territory_id}):[/red] {e}")
 
     console.print(f"  [green]Created offers for {success} territories[/green]")
 

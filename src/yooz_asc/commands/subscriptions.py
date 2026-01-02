@@ -285,22 +285,26 @@ def list_offers(
 
 
 def parse_duration(duration: str) -> tuple[str, int]:
-    """Parse duration string to ISO 8601 duration and number of periods.
+    """Parse duration string to App Store Connect duration enum and number of periods.
 
     Args:
         duration: Human-friendly duration (e.g., "3d", "1w", "2w", "1m", "3m", "6m", "1y")
 
     Returns:
-        Tuple of (ISO 8601 duration, number_of_periods)
+        Tuple of (ASC duration enum, number_of_periods)
+
+    App Store Connect duration values:
+        THREE_DAYS, ONE_WEEK, TWO_WEEKS, ONE_MONTH, TWO_MONTHS,
+        THREE_MONTHS, SIX_MONTHS, ONE_YEAR
 
     Examples:
-        "3d" -> ("P3D", 1)
-        "1w" -> ("P1W", 1)
-        "2w" -> ("P2W", 1)
-        "1m" -> ("P1M", 1)
-        "3m" -> ("P1M", 3)  # 3 periods of 1 month
-        "6m" -> ("P1M", 6)
-        "1y" -> ("P1Y", 1)
+        "3d" -> ("THREE_DAYS", 1)
+        "1w" -> ("ONE_WEEK", 1)
+        "2w" -> ("TWO_WEEKS", 1)
+        "1m" -> ("ONE_MONTH", 1)
+        "3m" -> ("ONE_MONTH", 3)  # 3 periods of 1 month
+        "6m" -> ("ONE_MONTH", 6)  # 6 periods or SIX_MONTHS
+        "1y" -> ("ONE_YEAR", 1)
     """
     import re
 
@@ -311,16 +315,37 @@ def parse_duration(duration: str) -> tuple[str, int]:
     value = int(match.group(1))
     unit = match.group(2)
 
-    unit_map = {"d": "D", "w": "W", "m": "M", "y": "Y"}
-    iso_unit = unit_map[unit]
+    # Map to ASC duration enums
+    if unit == "d":
+        if value == 3:
+            return "THREE_DAYS", 1
+        else:
+            raise ValueError(f"Only 3d is supported for days, got {duration}")
+    elif unit == "w":
+        if value == 1:
+            return "ONE_WEEK", 1
+        elif value == 2:
+            return "TWO_WEEKS", 1
+        else:
+            raise ValueError(f"Only 1w or 2w supported for weeks, got {duration}")
+    elif unit == "m":
+        if value == 1:
+            return "ONE_MONTH", 1
+        elif value == 2:
+            return "TWO_MONTHS", 1
+        elif value == 3:
+            return "ONE_MONTH", 3  # 3 periods of 1 month for pay-as-you-go
+        elif value == 6:
+            return "ONE_MONTH", 6  # 6 periods of 1 month for pay-as-you-go
+        else:
+            raise ValueError(f"Only 1m, 2m, 3m, 6m supported for months, got {duration}")
+    elif unit == "y":
+        if value == 1:
+            return "ONE_YEAR", 1
+        else:
+            raise ValueError(f"Only 1y supported for years, got {duration}")
 
-    # For months > 1, we use multiple periods of 1 month (for pay-as-you-go)
-    if unit == "m" and value > 1:
-        return "P1M", value
-    elif unit == "y" and value > 1:
-        return "P1Y", value
-
-    return f"P{value}{iso_unit}", 1
+    raise ValueError(f"Invalid duration: {duration}")
 
 
 @offers_app.command("create")
@@ -351,11 +376,11 @@ def create_offer(
         # $9.99 for 3 months upfront (pay-up-front)
         asc subscriptions offers create SUB_ID -t pay-up-front -d 3m -p 9.99 --all
     """
-    # Validate offer type
+    # Validate offer type - App Store Connect API expects uppercase snake_case
     offer_mode_map = {
-        "free-trial": "freeTrial",
-        "pay-as-you-go": "payAsYouGo",
-        "pay-up-front": "payUpFront",
+        "free-trial": "FREE_TRIAL",
+        "pay-as-you-go": "PAY_AS_YOU_GO",
+        "pay-up-front": "PAY_UP_FRONT",
     }
 
     if offer_type not in offer_mode_map:
