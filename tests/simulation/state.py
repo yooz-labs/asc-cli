@@ -65,15 +65,30 @@ class StateManager:
         app_id: str,
         bundle_id: str,
         name: str,
+        sku: str | None = None,
+        primary_locale: str = "en-US",
+        content_rights_declaration: str = "USES_THIRD_PARTY_CONTENT",
         **extra_attrs: Any,
     ) -> dict[str, Any]:
-        """Add an app to state."""
+        """Add an app to state with all required attributes."""
         app = {
             "id": app_id,
             "type": "apps",
             "attributes": {
                 "bundleId": bundle_id,
                 "name": name,
+                "sku": sku or app_id,
+                "primaryLocale": primary_locale,
+                "contentRightsDeclaration": content_rights_declaration,
+                # Subscription webhook URLs
+                "subscriptionStatusUrl": None,
+                "subscriptionStatusUrlForSandbox": None,
+                "subscriptionStatusUrlVersion": None,
+                "subscriptionStatusUrlVersionForSandbox": None,
+                # Additional app settings
+                "isOrEverWasMadeForKids": False,
+                "streamlinedPurchasingEnabled": False,
+                "accessibilityUrl": None,
                 **extra_attrs,
             },
         }
@@ -108,9 +123,12 @@ class StateManager:
         name: str,
         state: str = "MISSING_METADATA",
         subscription_period: str | None = None,
+        family_sharable: bool = True,
+        group_level: int = 1,
+        review_note: str | None = None,
         **extra_attrs: Any,
     ) -> dict[str, Any]:
-        """Add a subscription to state."""
+        """Add a subscription to state with all required attributes."""
         subscription = {
             "id": subscription_id,
             "type": "subscriptions",
@@ -119,6 +137,9 @@ class StateManager:
                 "name": name,
                 "state": state,
                 "subscriptionPeriod": subscription_period,
+                "familySharable": family_sharable,
+                "groupLevel": group_level,
+                "reviewNote": review_note,
                 **extra_attrs,
             },
         }

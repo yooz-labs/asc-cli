@@ -49,8 +49,9 @@
 
 ### 1. Subscription Period Immutability
 - **Requirement:** Period cannot be changed once set (ref line 34)
-- **Current Status:** Unknown - need to check if PATCH prevents changing period
-- **Action:** Add test to verify period cannot be changed after initial set
+- **Current Status:** ✅ Implemented in PATCH endpoint
+- **Location:** `tests/simulation/routes/subscriptions.py:128-141`
+- **Action:** Verify against real API that error response matches
 
 ### 2. Workflow Order Enforcement
 - **Requirement:** Availability → Pricing → Offers (ref lines 60-66)
@@ -102,9 +103,12 @@
 ## 📋 Missing Features
 
 ### 1. PATCH /subscriptions/{id}
-- **Status:** ❌ Not implemented
-- **Needed For:** Setting subscription period via API
-- **Note:** Documentation says period must be set in UI if MISSING_METADATA (ref line 58)
+- **Status:** ✅ Implemented (2026-01-04)
+- **Location:** `tests/simulation/routes/subscriptions.py:75-174`
+- **Features:**
+  - Sets subscription period
+  - Enforces period immutability (409 error if trying to change)
+  - Validates period values
 
 ### 2. TestFlight Endpoints
 - **Status:** ❌ Not in simulation

@@ -100,7 +100,7 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
     state.add_subscription_group(
         group_id=group_id,
         app_id=app_id,
-        reference_name="Whisper Pro",
+        reference_name="Yooz Whisper Plans",
     )
 
     result = {
@@ -109,16 +109,19 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
         "subscriptions": {},
     }
 
-    # Create subscriptions
+    # Create subscriptions (match real Whisper app)
     subscription_configs = [
-        ("monthly", "ONE_MONTH", "2.99", "Whisper Pro Monthly"),
-        ("yearly", "ONE_YEAR", "29.99", "Whisper Pro Yearly"),
-        ("family_monthly", "ONE_MONTH", "6.99", "Whisper Pro Family Monthly"),
-        ("family_yearly", "ONE_YEAR", "69.99", "Whisper Pro Family Yearly"),
+        ("monthly", "ONE_MONTH", "2.99", "Pro Monthly"),
+        ("yearly", "ONE_YEAR", "29.99", "Pro Yearly"),
+        ("family.monthly", "ONE_MONTH", "6.99", "Pro Family Monthly"),
+        ("family.yearly", "ONE_YEAR", "69.99", "Pro Family Yearly"),
     ]
 
     for suffix, period, _price, name in subscription_configs:
-        sub_id = f"sub_whisper_{suffix}"
+        # Convert suffix to use in ID (replace dots with underscores for ID)
+        id_suffix = suffix.replace(".", "_")
+        sub_id = f"sub_whisper_{id_suffix}"
+        # Use dots in product ID (matches real API)
         product_id = f"{bundle_id}.pro.{suffix}"
 
         state.add_subscription(
@@ -143,6 +146,6 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
         # Generate price points
         generate_price_points_for_subscription(state, sub_id)
 
-        result["subscriptions"][suffix] = sub_id
+        result["subscriptions"][id_suffix] = sub_id
 
     return result

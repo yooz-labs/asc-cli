@@ -6,6 +6,7 @@ import httpx
 
 from tests.simulation.responses import (
     build_not_found_error,
+    build_relationship_list,
     build_resource,
     build_response,
 )
@@ -29,7 +30,17 @@ def handle_list_apps(request: httpx.Request, state: "StateManager") -> httpx.Res
     if bundle_id_filter:
         apps = [a for a in apps if a["attributes"].get("bundleId") == bundle_id_filter]
 
-    data = [build_resource("apps", app["id"], app["attributes"]) for app in apps]
+    data = []
+    for app in apps:
+        # Build relationships
+        app_id = app["id"]
+        group_ids = state.app_subscription_groups.get(app_id, [])
+        relationships = {
+            "subscriptionGroups": build_relationship_list("subscriptionGroups", group_ids)
+        }
+
+        data.append(build_resource("apps", app_id, app["attributes"], relationships))
+
     return httpx.Response(200, json=build_response(data))
 
 
@@ -43,7 +54,12 @@ def handle_get_app(
         return httpx.Response(404, json=build_not_found_error("App", app_id))
 
     app = state.apps[app_id]
+
+    # Build relationships
+    group_ids = state.app_subscription_groups.get(app_id, [])
+    relationships = {"subscriptionGroups": build_relationship_list("subscriptionGroups", group_ids)}
+
     return httpx.Response(
         200,
-        json=build_response(build_resource("apps", app_id, app["attributes"])),
+        json=build_response(build_resource("apps", app_id, app["attributes"], relationships)),
     )

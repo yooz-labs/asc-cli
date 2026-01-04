@@ -6,6 +6,8 @@ import httpx
 
 from tests.simulation.responses import (
     build_not_found_error,
+    build_relationship,
+    build_relationship_list,
     build_resource,
     build_response,
 )
@@ -32,7 +34,19 @@ def handle_list_subscription_groups(
         state.subscription_groups[gid] for gid in group_ids if gid in state.subscription_groups
     ]
 
-    data = [build_resource("subscriptionGroups", g["id"], g["attributes"]) for g in groups]
+    data = []
+    for group in groups:
+        group_id = group["id"]
+        # Build relationships - link to app and subscriptions
+        subscription_ids = state.group_subscriptions.get(group_id, [])
+        relationships = {
+            "app": build_relationship("apps", app_id),
+            "subscriptions": build_relationship_list("subscriptions", subscription_ids),
+        }
+        data.append(
+            build_resource("subscriptionGroups", group_id, group["attributes"], relationships)
+        )
+
     return httpx.Response(200, json=build_response(data))
 
 
@@ -50,7 +64,21 @@ def handle_list_subscriptions(
         state.subscriptions[sid] for sid in subscription_ids if sid in state.subscriptions
     ]
 
-    data = [build_resource("subscriptions", s["id"], s["attributes"]) for s in subscriptions]
+    data = []
+    for subscription in subscriptions:
+        sub_id = subscription["id"]
+        # Build relationships - link to group, localizations, prices, etc
+        localization_ids = state.subscription_localizations_map.get(sub_id, [])
+        relationships = {
+            "subscriptionGroup": build_relationship("subscriptionGroups", group_id),
+            "subscriptionLocalizations": build_relationship_list(
+                "subscriptionLocalizations", localization_ids
+            ),
+        }
+        data.append(
+            build_resource("subscriptions", sub_id, subscription["attributes"], relationships)
+        )
+
     return httpx.Response(200, json=build_response(data))
 
 
@@ -64,10 +92,30 @@ def handle_get_subscription(
         return httpx.Response(404, json=build_not_found_error("Subscription", subscription_id))
 
     subscription = state.subscriptions[subscription_id]
+
+    # Find the group this subscription belongs to
+    group_id = None
+    for gid, sub_ids in state.group_subscriptions.items():
+        if subscription_id in sub_ids:
+            group_id = gid
+            break
+
+    # Build relationships
+    localization_ids = state.subscription_localizations_map.get(subscription_id, [])
+    relationships = {
+        "subscriptionLocalizations": build_relationship_list(
+            "subscriptionLocalizations", localization_ids
+        ),
+    }
+    if group_id:
+        relationships["subscriptionGroup"] = build_relationship("subscriptionGroups", group_id)
+
     return httpx.Response(
         200,
         json=build_response(
-            build_resource("subscriptions", subscription_id, subscription["attributes"])
+            build_resource(
+                "subscriptions", subscription_id, subscription["attributes"], relationships
+            )
         ),
     )
 
@@ -166,10 +214,28 @@ def handle_update_subscription(
         # Set the period
         subscription["attributes"]["subscriptionPeriod"] = new_period
 
+    # Build relationships for response
+    group_id = None
+    for gid, sub_ids in state.group_subscriptions.items():
+        if subscription_id in sub_ids:
+            group_id = gid
+            break
+
+    localization_ids = state.subscription_localizations_map.get(subscription_id, [])
+    relationships = {
+        "subscriptionLocalizations": build_relationship_list(
+            "subscriptionLocalizations", localization_ids
+        ),
+    }
+    if group_id:
+        relationships["subscriptionGroup"] = build_relationship("subscriptionGroups", group_id)
+
     return httpx.Response(
         200,
         json=build_response(
-            build_resource("subscriptions", subscription_id, subscription["attributes"])
+            build_resource(
+                "subscriptions", subscription_id, subscription["attributes"], relationships
+            )
         ),
     )
 
