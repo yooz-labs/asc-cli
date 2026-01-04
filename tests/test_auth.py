@@ -12,13 +12,19 @@ class TestCredentials:
 
     def test_from_env_missing(self) -> None:
         """Test loading from empty environment."""
-        with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("asc_cli.api.auth.load_dotenv"),  # Prevent .env loading
+        ):
             result = Credentials.from_env()
             assert result is None
 
     def test_from_env_partial(self) -> None:
         """Test loading with partial environment."""
-        with patch.dict(os.environ, {"ASC_ISSUER_ID": "test"}, clear=True):
+        with (
+            patch.dict(os.environ, {"ASC_ISSUER_ID": "test"}, clear=True),
+            patch("asc_cli.api.auth.load_dotenv"),  # Prevent .env loading
+        ):
             result = Credentials.from_env()
             assert result is None
 
@@ -29,7 +35,10 @@ class TestCredentials:
             "ASC_KEY_ID": "TESTKEY123",
             "ASC_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----",
         }
-        with patch.dict(os.environ, env, clear=True):
+        with (
+            patch.dict(os.environ, env, clear=True),
+            patch("asc_cli.api.auth.load_dotenv"),  # Prevent .env loading
+        ):
             result = Credentials.from_env()
             assert result is not None
             assert result.issuer_id == "test-issuer"
@@ -63,6 +72,7 @@ class TestAuthManager:
         """Test auto() with no credentials available."""
         with (
             patch.dict(os.environ, {}, clear=True),
+            patch("asc_cli.api.auth.load_dotenv"),  # Prevent .env loading
             patch("asc_cli.api.auth.Credentials.from_file", return_value=None),
         ):
             auth = AuthManager.auto()
