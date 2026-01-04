@@ -4,11 +4,40 @@ This module provides fixtures for both simulation-based tests
 and integration tests.
 """
 
+import os
+
 import pytest
 
 from tests.simulation import ASCSimulator, StateManager
 from tests.simulation.fixtures.apps import load_sample_app, load_whisper_app
 from tests.simulation.fixtures.territories import load_territories
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_env():
+    """Set up environment variables for all tests.
+
+    Provides dummy ASC credentials so AuthManager doesn't fail
+    when CLI commands are tested with the simulation.
+    """
+    # EC private key for testing (same one used in test_auth_coverage.py)
+    test_key = """-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
+AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
+ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
+-----END EC PRIVATE KEY-----"""
+
+    # Set dummy credentials for tests
+    os.environ["ASC_ISSUER_ID"] = "test-issuer-id"
+    os.environ["ASC_KEY_ID"] = "test-key-id"
+    os.environ["ASC_PRIVATE_KEY"] = test_key
+
+    yield
+
+    # Cleanup after all tests
+    os.environ.pop("ASC_ISSUER_ID", None)
+    os.environ.pop("ASC_KEY_ID", None)
+    os.environ.pop("ASC_PRIVATE_KEY", None)
 
 
 @pytest.fixture
