@@ -239,3 +239,56 @@ subscriptions:
         assert parsed.app_bundle_id == original.app_bundle_id
         assert len(parsed.subscriptions) == len(original.subscriptions)
         assert parsed.subscriptions[0].product_id == original.subscriptions[0].product_id
+
+
+class TestSchemaHelpers:
+    """Tests for schema helper functions."""
+
+    def test_generate_json_schema(self) -> None:
+        """Test generating JSON schema."""
+        schema = SubscriptionsConfig.generate_json_schema()
+
+        assert isinstance(schema, dict)
+        assert "properties" in schema
+        assert "app_bundle_id" in schema["properties"]
+        assert "subscriptions" in schema["properties"]
+
+    def test_write_json_schema(self, tmp_path: Path) -> None:
+        """Test writing JSON schema to file."""
+        import json
+
+        schema_file = tmp_path / "schema.json"
+        SubscriptionsConfig.write_json_schema(schema_file)
+
+        assert schema_file.exists()
+
+        with schema_file.open() as f:
+            schema = json.load(f)
+
+        assert isinstance(schema, dict)
+        assert "properties" in schema
+
+    def test_generate_example_config_without_path(self) -> None:
+        """Test generating example config as string."""
+        from asc_cli.config.schema import generate_example_config
+
+        example = generate_example_config()
+
+        assert isinstance(example, str)
+        assert "app_bundle_id" in example
+        assert "subscriptions" in example
+        assert "product_id" in example
+
+    def test_generate_example_config_with_path(self, tmp_path: Path) -> None:
+        """Test generating example config and writing to file."""
+        from asc_cli.config.schema import generate_example_config
+
+        example_file = tmp_path / "example.yaml"
+        result = generate_example_config(path=example_file)
+
+        assert example_file.exists()
+        assert isinstance(result, str)
+
+        content = example_file.read_text()
+        assert content == result
+        assert "app_bundle_id" in content

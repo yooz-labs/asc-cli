@@ -34,6 +34,12 @@ class TestAppsCommands:
         assert result.exit_code == 0
         assert "Test App" in result.output
 
+    def test_apps_list_no_apps(self, runner: CliRunner, mock_asc_api) -> None:
+        """Test apps list when no apps exist."""
+        result = runner.invoke(app, ["apps", "list"])
+        assert result.exit_code == 0
+        assert "No apps found" in result.output
+
 
 @pytest.mark.simulation
 class TestSubscriptionsCommands:

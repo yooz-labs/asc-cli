@@ -106,6 +106,32 @@ ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
             assert "Authentication successful" in result.stdout
             assert mock_prompt.call_count == 3
 
+    def test_login_with_token_generation_failure(self, tmp_path: Path) -> None:
+        """Test login fails when token generation fails."""
+        key_file = tmp_path / "test_key.p8"
+        # Use a key with valid format but invalid content
+        key_content = """-----BEGIN PRIVATE KEY-----
+INVALID_KEY_CONTENT_THAT_WILL_FAIL_TOKEN_GENERATION
+-----END PRIVATE KEY-----"""
+        key_file.write_text(key_content)
+
+        result = runner.invoke(
+            app,
+            [
+                "auth",
+                "login",
+                "--issuer-id",
+                "test-issuer",
+                "--key-id",
+                "test-key",
+                "--key-path",
+                str(key_file),
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "Authentication failed" in result.stdout
+
 
 class TestAuthStatus:
     """Tests for 'asc auth status' command."""
@@ -152,6 +178,19 @@ ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
             assert result.exit_code == 0
             assert "Authenticated" in result.stdout
             assert "Warning" in result.stdout or "failed" in result.stdout
+
+    def test_status_when_not_authenticated(self) -> None:
+        """Test status command when not authenticated."""
+        # Mock both credential sources to return None
+        with (
+            patch("asc_cli.api.auth.Credentials.from_env", return_value=None),
+            patch("asc_cli.api.auth.Credentials.from_file", return_value=None),
+        ):
+            result = runner.invoke(app, ["auth", "status"])
+
+            assert result.exit_code == 0
+            assert "Not authenticated" in result.stdout
+            assert "asc auth login" in result.stdout
 
 
 class TestAuthLogout:
@@ -237,3 +276,17 @@ class TestAuthTest:
 
             assert result.exit_code == 1
             assert "Error" in result.stdout
+
+    def test_auth_test_with_many_apps(self, mock_asc_api) -> None:
+        """Test 'asc auth test' displays truncated list with many apps."""
+        # Add 10 apps to trigger the "... and X more" message
+        for i in range(10):
+            mock_asc_api.state.add_app(f"app_{i}", f"com.test.app{i}", f"Test App {i}")
+
+        result = runner.invoke(app, ["auth", "test"])
+
+        assert result.exit_code == 0
+        assert "Connection successful" in result.stdout
+        assert "Found 10 app(s)" in result.stdout
+        # Should show "... and 5 more" message
+        assert "... and 5 more" in result.stdout
