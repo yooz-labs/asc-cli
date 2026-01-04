@@ -57,3 +57,13 @@ site/
 # Local development
 .env.local
 *.local
+.env
+yooz-whisper-subscriptions.yaml
+
+# Claude/Serena (project-specific - tracked in version control)
+# Note: CLAUDE.md, .rules/, and .context/ are intentionally version controlled
+# for this project to maintain project context and coding standards.
+#
+# Only exclude user-specific global settings:
+# ~/.claude/ (global config, not project)
+.serena/
