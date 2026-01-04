@@ -359,6 +359,11 @@ class AppStoreConnectClient:
         result = await self.get("territories", {"limit": 200})
         return result.get("data", [])  # type: ignore[no-any-return]
 
+    async def list_subscription_localizations(self, subscription_id: str) -> list[dict[str, Any]]:
+        """List localizations for a subscription."""
+        result = await self.get(f"subscriptions/{subscription_id}/subscriptionLocalizations")
+        return result.get("data", [])  # type: ignore[no-any-return]
+
     async def get_subscription_availability(
         self,
         subscription_id: str,
