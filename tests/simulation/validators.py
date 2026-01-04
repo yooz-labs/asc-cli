@@ -184,38 +184,15 @@ def validate_duration_for_period(
         ValidationError: If duration is not valid for the period
     """
     # Duration constraints by subscription period
-    # From Apple docs: offers can only be <= subscription period
+    # EXACT constraints from Apple API documentation (ref/app-store-connect-api.md lines 91-100)
     valid_durations: dict[str, list[str]] = {
-        "ONE_WEEK": ["THREE_DAYS", "ONE_WEEK"],
-        "ONE_MONTH": ["THREE_DAYS", "ONE_WEEK", "TWO_WEEKS", "ONE_MONTH"],
-        "TWO_MONTHS": [
-            "THREE_DAYS",
-            "ONE_WEEK",
-            "TWO_WEEKS",
-            "ONE_MONTH",
-            "TWO_MONTHS",
-        ],
-        "THREE_MONTHS": [
-            "THREE_DAYS",
-            "ONE_WEEK",
-            "TWO_WEEKS",
-            "ONE_MONTH",
-            "TWO_MONTHS",
-            "THREE_MONTHS",
-        ],
-        "SIX_MONTHS": [
-            "THREE_DAYS",
-            "ONE_WEEK",
-            "TWO_WEEKS",
-            "ONE_MONTH",
-            "TWO_MONTHS",
-            "THREE_MONTHS",
-            "SIX_MONTHS",
-        ],
+        "ONE_WEEK": ["THREE_DAYS"],
+        "ONE_MONTH": ["ONE_WEEK", "TWO_WEEKS", "ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS"],
+        "TWO_MONTHS": ["ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS"],
+        "THREE_MONTHS": ["ONE_MONTH", "TWO_MONTHS", "THREE_MONTHS", "SIX_MONTHS"],
+        "SIX_MONTHS": ["ONE_MONTH", "THREE_MONTHS", "SIX_MONTHS"],
         "ONE_YEAR": [
-            "THREE_DAYS",
             "ONE_WEEK",
-            "TWO_WEEKS",
             "ONE_MONTH",
             "TWO_MONTHS",
             "THREE_MONTHS",
