@@ -1,4 +1,4 @@
-# yooz-asc Scratch History
+# asc-cli Scratch History
 
 ## Purpose
 Document failed attempts, dead ends, and lessons learned during development.

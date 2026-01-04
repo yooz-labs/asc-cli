@@ -1,4 +1,4 @@
-# yooz-asc
+# asc-cli
 
 A powerful command-line interface for Apple App Store Connect API.
 
@@ -7,7 +7,7 @@ A powerful command-line interface for Apple App Store Connect API.
 
 ## Overview
 
-`yooz-asc` brings App Store Connect to your terminal. Manage subscriptions, pricing, TestFlight, and more without leaving the command line.
+`asc-cli` brings App Store Connect to your terminal. Manage subscriptions, pricing, TestFlight, and more without leaving the command line.
 
 ```bash
 # Configure pricing for all territories
@@ -38,20 +38,20 @@ asc apps submit --app "My App" --version 1.0.0
 ### Using pip
 
 ```bash
-pip install yooz-asc
+pip install asc-cli
 ```
 
 ### Using Homebrew (coming soon)
 
 ```bash
-brew install yooz-labs/tap/yooz-asc
+brew install yooz-labs/tap/asc-cli
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/yooz-labs/yooz-asc.git
-cd yooz-asc
+git clone https://github.com/yooz-labs/asc-cli.git
+cd asc-cli
 pip install -e .
 ```
 
@@ -197,7 +197,7 @@ Users are responsible for complying with Apple's [App Store Connect API Terms of
 
 ## Documentation
 
-Full documentation available at [docs.yooz.live/tools/yooz-asc](https://docs.yooz.live/tools/yooz-asc).
+Full documentation available at [docs.yooz.live/tools/asc-cli](https://docs.yooz.live/tools/asc-cli).
 
 ## License
 

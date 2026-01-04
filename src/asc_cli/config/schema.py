@@ -178,8 +178,8 @@ class SubscriptionsConfig(BaseModel):
 
 
 # Example configuration template
-EXAMPLE_CONFIG = """# yooz-asc Subscription Configuration
-# Schema: https://github.com/yooz-labs/yooz-asc/blob/main/schema/subscriptions.schema.json
+EXAMPLE_CONFIG = """# asc-cli Subscription Configuration
+# Schema: https://github.com/yooz-labs/asc-cli/blob/main/schema/subscriptions.schema.json
 
 app_bundle_id: com.example.myapp
 

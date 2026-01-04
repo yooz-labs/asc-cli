@@ -2,8 +2,8 @@
 
 from typer.testing import CliRunner
 
-from yooz_asc import __version__
-from yooz_asc.cli import app
+from asc_cli import __version__
+from asc_cli.cli import app
 
 runner = CliRunner()
 

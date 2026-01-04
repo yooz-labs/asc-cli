@@ -1,4 +1,4 @@
-# yooz-asc Implementation Plan
+# asc-cli Implementation Plan
 
 ## Overview
 
@@ -11,7 +11,7 @@ A comprehensive CLI for Apple App Store Connect API, similar to GitHub's `gh` CL
 - [x] Typer CLI framework setup
 - [x] Authentication module (JWT token generation)
 - [x] Base API client with httpx
-- [x] Credential storage (~/.config/yooz-asc/)
+- [x] Credential storage (~/.config/asc-cli/)
 
 ### Basic Commands
 - [x] `asc auth login/status/logout/test`

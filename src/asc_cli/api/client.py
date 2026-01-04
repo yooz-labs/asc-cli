@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from yooz_asc.api.auth import AuthManager
+from asc_cli.api.auth import AuthManager
 
 
 class AppStoreConnectClient:

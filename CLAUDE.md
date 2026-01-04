@@ -1,4 +1,4 @@
-# yooz-asc - App Store Connect CLI
+# asc-cli - App Store Connect CLI
 
 ## Project Overview
 
@@ -7,7 +7,7 @@
 **Version:** 0.1.0
 **Status:** Phase 1 - Foundation (Core infrastructure complete)
 
-yooz-asc brings App Store Connect to your terminal:
+asc-cli brings App Store Connect to your terminal:
 - Subscription management with bulk pricing across 175 territories
 - TestFlight build and tester management
 - Introductory and promotional offer configuration
@@ -40,7 +40,7 @@ asc --help
 ## Project Structure
 
 ```
-yooz-asc/
+asc-cli/
 ├── CLAUDE.md              # This file
 ├── plan.md                # Implementation roadmap
 ├── README.md              # User documentation
@@ -59,7 +59,7 @@ yooz-asc/
 │   ├── code_review.md     # PR review process
 │   ├── self_improve.md    # Rule evolution
 │   └── serena_mcp.md      # Code intelligence
-├── src/yooz_asc/          # Source code
+├── src/asc_cli/           # Source code
 │   ├── __init__.py
 │   ├── cli.py             # Typer app and commands
 │   ├── auth.py            # JWT token generation
@@ -137,7 +137,7 @@ asc subscriptions list
 
 ### Authentication
 ```bash
-# Set credentials (stored in ~/.config/yooz-asc/)
+# Set credentials (stored in ~/.config/asc-cli/)
 export ASC_ISSUER_ID="your-issuer-id"
 export ASC_KEY_ID="your-key-id"
 export ASC_PRIVATE_KEY_PATH="~/.asc/AuthKey_XXXXX.p8"

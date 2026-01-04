@@ -23,8 +23,8 @@ def list_subscriptions(app_id: str, include_prices: bool = False) -> list[Subscr
 
 ## Project Structure
 ```
-yooz-asc/
-├── src/yooz_asc/       # Source code
+asc-cli/
+├── src/asc_cli/        # Source code
 │   ├── __init__.py
 │   ├── cli.py          # Typer app
 │   ├── auth.py         # Authentication

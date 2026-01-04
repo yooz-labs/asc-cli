@@ -1,6 +1,6 @@
 # App Store Connect API Reference
 
-This document serves as a grounding reference for yooz-asc CLI implementation.
+This document serves as a grounding reference for asc-cli CLI implementation.
 
 ## API Base URL
 

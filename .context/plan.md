@@ -1,4 +1,4 @@
-# yooz-asc Development Plan
+# asc-cli Development Plan
 
 ## Project Overview
 **Goal:** CLI for Apple App Store Connect API management
@@ -11,7 +11,7 @@
 - [x] Typer CLI framework setup
 - [x] Authentication module (JWT token generation)
 - [x] Base API client with httpx
-- [x] Credential storage (~/.config/yooz-asc/)
+- [x] Credential storage (~/.config/asc-cli/)
 - [x] `asc auth login/status/logout/test`
 - [x] `asc apps list/info`
 - [x] `asc subscriptions list` (basic)

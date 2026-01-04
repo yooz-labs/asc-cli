@@ -1,4 +1,4 @@
-# yooz-asc Design Ideas
+# asc-cli Design Ideas
 
 ## Purpose
 Capture high-level concepts, design decisions, and architectural ideas before implementation.

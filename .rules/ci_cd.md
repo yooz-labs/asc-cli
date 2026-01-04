@@ -52,7 +52,7 @@ jobs:
     - uses: actions/setup-python@v5
       with: { python-version: '${{ matrix.python-version }}', cache: 'pip' }
     - run: pip install -e ".[dev]"
-    - run: pytest --cov=src/yooz_asc --cov-fail-under=95
+    - run: pytest --cov=src/asc_cli --cov-fail-under=95
 ```
 
 ## Key Practices

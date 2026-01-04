@@ -7,8 +7,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from yooz_asc.api.client import AppStoreConnectClient
-from yooz_asc.config.schema import (
+from asc_cli.api.client import AppStoreConnectClient
+from asc_cli.config.schema import (
     IntroductoryOffer,
     OfferType,
     SubscriptionConfig,
@@ -141,7 +141,7 @@ async def _set_subscription_period(
     dry_run: bool,
 ) -> None:
     """Set subscription billing period if specified and not already set."""
-    from yooz_asc.api.client import APIError
+    from asc_cli.api.client import APIError
 
     if sub_config.period is None:
         return  # No period specified in config
@@ -280,7 +280,7 @@ async def _apply_offer(
     dry_run: bool,
 ) -> None:
     """Apply an introductory offer to a subscription."""
-    from yooz_asc.commands.subscriptions import parse_duration
+    from asc_cli.commands.subscriptions import parse_duration
 
     # App Store Connect API expects uppercase snake_case
     offer_mode_map = {

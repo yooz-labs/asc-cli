@@ -1,4 +1,4 @@
-# yooz-asc Research Notes
+# asc-cli Research Notes
 
 ## Purpose
 Track technical solutions, approaches, and references discovered during development.
