@@ -11,7 +11,7 @@ import jwt
 from dotenv import load_dotenv
 
 # Default config directory
-CONFIG_DIR = Path.home() / ".config" / "yooz-asc"
+CONFIG_DIR = Path.home() / ".config" / "asc-cli"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials"
 
 
@@ -66,6 +66,8 @@ class Credentials:
         if not all([issuer_id, key_id, private_key_path]):
             return None
 
+        # At this point private_key_path is guaranteed to be str
+        assert private_key_path is not None
         path = Path(private_key_path).expanduser()
         if not path.exists():
             return None
@@ -80,7 +82,7 @@ class Credentials:
         """Save credentials to config file."""
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-        content = f"""# yooz-asc credentials
+        content = f"""# asc-cli credentials
 issuer_id={self.issuer_id}
 key_id={self.key_id}
 private_key_path={private_key_path}

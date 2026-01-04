@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from yooz_asc.api.client import AppStoreConnectClient
+from asc_cli.api.client import AppStoreConnectClient
 
 app = typer.Typer(help="Manage subscriptions and pricing.")
 console = Console()

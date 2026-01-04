@@ -1,10 +1,10 @@
-"""Main CLI entry point for yooz-asc."""
+"""Main CLI entry point for asc-cli."""
 
 import typer
 from rich.console import Console
 
-from yooz_asc import __version__
-from yooz_asc.commands import apps, auth, bulk, subscriptions, testflight
+from asc_cli import __version__
+from asc_cli.commands import apps, auth, bulk, subscriptions, testflight
 
 app = typer.Typer(
     name="asc",
@@ -26,7 +26,7 @@ app.add_typer(bulk.app, name="bulk", help="Bulk operations from YAML configurati
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        console.print(f"[bold blue]yooz-asc[/bold blue] version {__version__}")
+        console.print(f"[bold blue]asc-cli[/bold blue] version {__version__}")
         raise typer.Exit()
 
 
@@ -42,7 +42,7 @@ def main(
     ),
 ) -> None:
     """
-    [bold blue]yooz-asc[/bold blue] - App Store Connect on your terminal.
+    [bold blue]asc-cli[/bold blue] - App Store Connect on your terminal.
 
     Manage subscriptions, pricing, TestFlight, and more.
 

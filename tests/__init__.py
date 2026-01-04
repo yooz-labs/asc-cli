@@ -1,1 +1,1 @@
-"""Tests for yooz-asc."""
+"""Tests for asc-cli."""

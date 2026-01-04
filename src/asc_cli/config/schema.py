@@ -33,7 +33,7 @@ subscriptions:
 
 from enum import Enum
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -163,7 +163,7 @@ class SubscriptionsConfig(BaseModel):
             )
 
     @classmethod
-    def generate_json_schema(cls) -> dict:
+    def generate_json_schema(cls) -> dict[str, Any]:
         """Generate JSON schema for the configuration."""
         return cls.model_json_schema()
 
@@ -178,8 +178,8 @@ class SubscriptionsConfig(BaseModel):
 
 
 # Example configuration template
-EXAMPLE_CONFIG = """# yooz-asc Subscription Configuration
-# Schema: https://github.com/yooz-labs/yooz-asc/blob/main/schema/subscriptions.schema.json
+EXAMPLE_CONFIG = """# asc-cli Subscription Configuration
+# Schema: https://github.com/yooz-labs/asc-cli/blob/main/schema/subscriptions.schema.json
 
 app_bundle_id: com.example.myapp
 

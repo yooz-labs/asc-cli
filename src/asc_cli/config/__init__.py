@@ -1,6 +1,6 @@
-"""Configuration and schema definitions for yooz-asc."""
+"""Configuration and schema definitions for asc-cli."""
 
-from yooz_asc.config.schema import (
+from asc_cli.config.schema import (
     IntroductoryOffer,
     OfferType,
     SubscriptionConfig,

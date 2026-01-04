@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from yooz_asc.api.auth import CONFIG_DIR, AuthManager, Credentials
+from asc_cli.api.auth import CONFIG_DIR, AuthManager, Credentials
 
 app = typer.Typer(help="Manage authentication credentials.")
 console = Console()
@@ -43,7 +43,7 @@ def login(
         key_id = key_id or Prompt.ask("[bold]Key ID[/bold]")
         key_path_str = Prompt.ask(
             "[bold]Path to .p8 file[/bold]",
-            default="~/.config/yooz-asc/AuthKey.p8",
+            default="~/.config/asc-cli/AuthKey.p8",
         )
         key_path = Path(key_path_str).expanduser()
 
@@ -104,7 +104,7 @@ def status() -> None:
 @app.command()
 def logout() -> None:
     """Remove stored credentials."""
-    from yooz_asc.api.auth import CREDENTIALS_FILE
+    from asc_cli.api.auth import CREDENTIALS_FILE
 
     if CREDENTIALS_FILE.exists():
         CREDENTIALS_FILE.unlink()
@@ -116,7 +116,7 @@ def logout() -> None:
 @app.command()
 def test() -> None:
     """Test API connection by listing apps."""
-    from yooz_asc.api.client import AppStoreConnectClient
+    from asc_cli.api.client import AppStoreConnectClient
 
     async def _test() -> None:
         client = AppStoreConnectClient()
