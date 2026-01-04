@@ -90,10 +90,17 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
     # Load territories first
     load_territories(state)
 
-    # Create app
+    # Create app (match real Whisper app attributes)
     app_id = "app_whisper"
     bundle_id = "live.yooz.whisper"
-    state.add_app(app_id, bundle_id, "Yooz Whisper")
+    state.add_app(
+        app_id,
+        bundle_id,
+        "Yooz Whisper",
+        sku="yooz-whisper-macos",
+        content_rights_declaration="DOES_NOT_USE_THIRD_PARTY_CONTENT",
+        streamlinedPurchasingEnabled=True,
+    )
 
     # Create subscription group
     group_id = "group_whisper_premium"
@@ -110,14 +117,15 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
     }
 
     # Create subscriptions (match real Whisper app)
+    # Each tuple: suffix, period, price, name, group_level, family_sharable
     subscription_configs = [
-        ("monthly", "ONE_MONTH", "2.99", "Pro Monthly"),
-        ("yearly", "ONE_YEAR", "29.99", "Pro Yearly"),
-        ("family.monthly", "ONE_MONTH", "6.99", "Pro Family Monthly"),
-        ("family.yearly", "ONE_YEAR", "69.99", "Pro Family Yearly"),
+        ("family.monthly", "ONE_MONTH", "6.99", "Pro Family Monthly", 1, True),
+        ("family.yearly", "ONE_YEAR", "69.99", "Pro Family Yearly", 1, True),
+        ("monthly", "ONE_MONTH", "2.99", "Pro Monthly", 2, False),
+        ("yearly", "ONE_YEAR", "29.99", "Pro Yearly", 2, False),
     ]
 
-    for suffix, period, _price, name in subscription_configs:
+    for suffix, period, _price, name, group_level, family_sharable in subscription_configs:
         # Convert suffix to use in ID (replace dots with underscores for ID)
         id_suffix = suffix.replace(".", "_")
         sub_id = f"sub_whisper_{id_suffix}"
@@ -131,6 +139,8 @@ def load_whisper_app(state: "StateManager") -> dict[str, str]:
             name=name,
             state="MISSING_METADATA",
             subscription_period=period,
+            group_level=group_level,
+            family_sharable=family_sharable,
         )
 
         # Add localization

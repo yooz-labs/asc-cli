@@ -6,8 +6,6 @@ import httpx
 
 from tests.simulation.responses import (
     build_not_found_error,
-    build_relationship,
-    build_relationship_list,
     build_resource,
     build_response,
 )
@@ -36,16 +34,9 @@ def handle_list_subscription_groups(
 
     data = []
     for group in groups:
-        group_id = group["id"]
-        # Build relationships - link to app and subscriptions
-        subscription_ids = state.group_subscriptions.get(group_id, [])
-        relationships = {
-            "app": build_relationship("apps", app_id),
-            "subscriptions": build_relationship_list("subscriptions", subscription_ids),
-        }
-        data.append(
-            build_resource("subscriptionGroups", group_id, group["attributes"], relationships)
-        )
+        # Note: Real API includes relationships with links only (no data)
+        # We omit them for now since we don't have link URLs
+        data.append(build_resource("subscriptionGroups", group["id"], group["attributes"]))
 
     return httpx.Response(200, json=build_response(data))
 
@@ -66,18 +57,9 @@ def handle_list_subscriptions(
 
     data = []
     for subscription in subscriptions:
-        sub_id = subscription["id"]
-        # Build relationships - link to group, localizations, prices, etc
-        localization_ids = state.subscription_localizations_map.get(sub_id, [])
-        relationships = {
-            "subscriptionGroup": build_relationship("subscriptionGroups", group_id),
-            "subscriptionLocalizations": build_relationship_list(
-                "subscriptionLocalizations", localization_ids
-            ),
-        }
-        data.append(
-            build_resource("subscriptions", sub_id, subscription["attributes"], relationships)
-        )
+        # Note: Real API includes relationships with links only (no data)
+        # We omit them for now since we don't have link URLs
+        data.append(build_resource("subscriptions", subscription["id"], subscription["attributes"]))
 
     return httpx.Response(200, json=build_response(data))
 
@@ -93,29 +75,12 @@ def handle_get_subscription(
 
     subscription = state.subscriptions[subscription_id]
 
-    # Find the group this subscription belongs to
-    group_id = None
-    for gid, sub_ids in state.group_subscriptions.items():
-        if subscription_id in sub_ids:
-            group_id = gid
-            break
-
-    # Build relationships
-    localization_ids = state.subscription_localizations_map.get(subscription_id, [])
-    relationships = {
-        "subscriptionLocalizations": build_relationship_list(
-            "subscriptionLocalizations", localization_ids
-        ),
-    }
-    if group_id:
-        relationships["subscriptionGroup"] = build_relationship("subscriptionGroups", group_id)
-
+    # Note: Real API includes relationships with links only (no data)
+    # We omit them for now since we don't have link URLs
     return httpx.Response(
         200,
         json=build_response(
-            build_resource(
-                "subscriptions", subscription_id, subscription["attributes"], relationships
-            )
+            build_resource("subscriptions", subscription_id, subscription["attributes"])
         ),
     )
 
@@ -214,28 +179,12 @@ def handle_update_subscription(
         # Set the period
         subscription["attributes"]["subscriptionPeriod"] = new_period
 
-    # Build relationships for response
-    group_id = None
-    for gid, sub_ids in state.group_subscriptions.items():
-        if subscription_id in sub_ids:
-            group_id = gid
-            break
-
-    localization_ids = state.subscription_localizations_map.get(subscription_id, [])
-    relationships = {
-        "subscriptionLocalizations": build_relationship_list(
-            "subscriptionLocalizations", localization_ids
-        ),
-    }
-    if group_id:
-        relationships["subscriptionGroup"] = build_relationship("subscriptionGroups", group_id)
-
+    # Note: Real API includes relationships with links only (no data)
+    # We omit them for now since we don't have link URLs
     return httpx.Response(
         200,
         json=build_response(
-            build_resource(
-                "subscriptions", subscription_id, subscription["attributes"], relationships
-            )
+            build_resource("subscriptions", subscription_id, subscription["attributes"])
         ),
     )
 
@@ -297,6 +246,8 @@ def handle_get_subscription_availability(
             if tid in state.territories
         ]
 
+    # Note: Real API includes relationships with links only (no data)
+    # We omit them for now since we don't have link URLs
     return httpx.Response(
         200,
         json=build_response(
@@ -304,7 +255,6 @@ def handle_get_subscription_availability(
                 "subscriptionAvailabilities",
                 availability_id,
                 availability["attributes"],
-                relationships=availability.get("relationships"),
             ),
             included=included,
         ),
@@ -355,6 +305,8 @@ def handle_create_subscription_availability(
         available_in_new_territories=available_in_new,
     )
 
+    # Note: Real API includes relationships with links only (no data)
+    # We omit them for now since we don't have link URLs
     return httpx.Response(
         201,
         json=build_response(
@@ -362,7 +314,6 @@ def handle_create_subscription_availability(
                 "subscriptionAvailabilities",
                 availability["id"],
                 availability["attributes"],
-                relationships=availability.get("relationships"),
             )
         ),
     )

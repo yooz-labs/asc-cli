@@ -146,7 +146,7 @@ class TestWhisperAppSimulation:
         try:
             groups = await client.list_subscription_groups("app_whisper")
             assert len(groups) == 1
-            assert groups[0]["attributes"]["referenceName"] == "Whisper Pro"
+            assert groups[0]["attributes"]["referenceName"] == "Yooz Whisper Plans"
 
             subscriptions = await client.list_subscriptions("group_whisper_premium")
             assert len(subscriptions) == 4

@@ -6,7 +6,6 @@ import httpx
 
 from tests.simulation.responses import (
     build_not_found_error,
-    build_relationship_list,
     build_resource,
     build_response,
 )
@@ -32,14 +31,9 @@ def handle_list_apps(request: httpx.Request, state: "StateManager") -> httpx.Res
 
     data = []
     for app in apps:
-        # Build relationships
-        app_id = app["id"]
-        group_ids = state.app_subscription_groups.get(app_id, [])
-        relationships = {
-            "subscriptionGroups": build_relationship_list("subscriptionGroups", group_ids)
-        }
-
-        data.append(build_resource("apps", app_id, app["attributes"], relationships))
+        # Note: Real API includes relationships with links only (no data)
+        # We omit them for now since we don't have link URLs
+        data.append(build_resource("apps", app["id"], app["attributes"]))
 
     return httpx.Response(200, json=build_response(data))
 
@@ -55,11 +49,9 @@ def handle_get_app(
 
     app = state.apps[app_id]
 
-    # Build relationships
-    group_ids = state.app_subscription_groups.get(app_id, [])
-    relationships = {"subscriptionGroups": build_relationship_list("subscriptionGroups", group_ids)}
-
+    # Note: Real API includes relationships with links only (no data)
+    # We omit them for now since we don't have link URLs
     return httpx.Response(
         200,
-        json=build_response(build_resource("apps", app_id, app["attributes"], relationships)),
+        json=build_response(build_resource("apps", app_id, app["attributes"])),
     )
