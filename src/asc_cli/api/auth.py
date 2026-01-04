@@ -66,6 +66,8 @@ class Credentials:
         if not all([issuer_id, key_id, private_key_path]):
             return None
 
+        # At this point private_key_path is guaranteed to be str
+        assert private_key_path is not None
         path = Path(private_key_path).expanduser()
         if not path.exists():
             return None

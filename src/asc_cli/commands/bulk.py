@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -69,7 +70,7 @@ def apply_config(
 
             # Get subscription groups and subscriptions
             groups = await client.list_subscription_groups(app_id)
-            all_subscriptions: dict[str, dict] = {}
+            all_subscriptions: dict[str, dict[str, Any]] = {}
 
             for group in groups:
                 subs = await client.list_subscriptions(group["id"])
@@ -136,7 +137,7 @@ def apply_config(
 async def _set_subscription_period(
     client: AppStoreConnectClient,
     subscription_id: str,
-    subscription: dict,
+    subscription: dict[str, Any],
     sub_config: SubscriptionConfig,
     dry_run: bool,
 ) -> None:
