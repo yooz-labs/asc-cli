@@ -136,6 +136,7 @@ addopts = [
 ]
 markers = [
     "integration: tests that require real API credentials (run with: pytest -m integration)",
+    "simulation: tests using the API simulation engine",
 ]
 
 [tool.coverage.run]
