@@ -54,7 +54,7 @@ def load_sample_app(
             group_id=group_id,
             product_id=f"{bundle_id}.premium.monthly",
             name="Premium Monthly",
-            state="MISSING_METADATA" if subscription_period else "MISSING_METADATA",
+            state="MISSING_METADATA",
             subscription_period=subscription_period,
         )
         result["subscription_id"] = subscription_id

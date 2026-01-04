@@ -72,6 +72,108 @@ def handle_get_subscription(
     )
 
 
+def handle_update_subscription(
+    request: httpx.Request,
+    state: "StateManager",
+    subscription_id: str,
+) -> httpx.Response:
+    """Handle PATCH /subscriptions/{subscription_id}.
+
+    Primarily used to set subscriptionPeriod. Once set, period cannot be changed.
+    """
+    if subscription_id not in state.subscriptions:
+        return httpx.Response(404, json=build_not_found_error("Subscription", subscription_id))
+
+    try:
+        data = request.json() if hasattr(request, "json") else {}
+        if callable(data):
+            data = data()
+    except Exception:
+        from tests.simulation.responses import build_error_response
+
+        return httpx.Response(
+            400,
+            json=build_error_response(400, "INVALID_REQUEST", "Bad Request", "Invalid JSON"),
+        )
+
+    # Validate JSON:API structure
+    if "data" not in data or data["data"].get("type") != "subscriptions":
+        from tests.simulation.responses import build_error_response
+
+        return httpx.Response(
+            400,
+            json=build_error_response(
+                400, "INVALID_REQUEST", "Bad Request", "Invalid request structure"
+            ),
+        )
+
+    if data["data"].get("id") != subscription_id:
+        from tests.simulation.responses import build_error_response
+
+        return httpx.Response(
+            400,
+            json=build_error_response(
+                400, "INVALID_REQUEST", "Bad Request", "ID mismatch in request"
+            ),
+        )
+
+    subscription = state.subscriptions[subscription_id]
+    attrs = data["data"].get("attributes", {})
+
+    # Handle subscriptionPeriod update
+    if "subscriptionPeriod" in attrs:
+        new_period = attrs["subscriptionPeriod"]
+        current_period = subscription["attributes"].get("subscriptionPeriod")
+
+        # Check if period is already set and trying to change it
+        if current_period and current_period != new_period:
+            from tests.simulation.responses import build_error_response
+
+            return httpx.Response(
+                409,
+                json=build_error_response(
+                    409,
+                    "ENTITY_ERROR.ATTRIBUTE.INVALID",
+                    "Entity Error",
+                    f"Subscription period cannot be changed once set. "
+                    f"Current: {current_period}, Requested: {new_period}",
+                ),
+            )
+
+        # Validate period value
+        valid_periods = [
+            "ONE_WEEK",
+            "ONE_MONTH",
+            "TWO_MONTHS",
+            "THREE_MONTHS",
+            "SIX_MONTHS",
+            "ONE_YEAR",
+        ]
+        if new_period not in valid_periods:
+            from tests.simulation.responses import build_error_response
+
+            return httpx.Response(
+                400,
+                json=build_error_response(
+                    400,
+                    "INVALID_ATTRIBUTE",
+                    "Invalid Attribute",
+                    f"Invalid subscriptionPeriod: {new_period}. "
+                    f"Valid values: {', '.join(valid_periods)}",
+                ),
+            )
+
+        # Set the period
+        subscription["attributes"]["subscriptionPeriod"] = new_period
+
+    return httpx.Response(
+        200,
+        json=build_response(
+            build_resource("subscriptions", subscription_id, subscription["attributes"])
+        ),
+    )
+
+
 def handle_list_subscription_localizations(
     request: httpx.Request,
     state: "StateManager",

@@ -32,6 +32,7 @@ from tests.simulation.routes.subscriptions import (
     handle_list_subscription_groups,
     handle_list_subscription_localizations,
     handle_list_subscriptions,
+    handle_update_subscription,
 )
 from tests.simulation.routes.territories import handle_list_territories
 from tests.simulation.state import StateManager
@@ -225,6 +226,11 @@ class ASCSimulator:
         mock.get(
             url__regex=rf"{re.escape(self.BASE_URL)}/subscriptions/(?P<subscription_id>[^/]+)$"
         ).mock(side_effect=self._wrap_handler_with_id(handle_get_subscription, "subscription_id"))
+        mock.patch(
+            url__regex=rf"{re.escape(self.BASE_URL)}/subscriptions/(?P<subscription_id>[^/]+)$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(handle_update_subscription, "subscription_id")
+        )
 
         # Subscription Localizations
         mock.get(

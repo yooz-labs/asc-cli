@@ -12,8 +12,8 @@ from tests.simulation.fixtures.price_points import (
 from tests.simulation.fixtures.territories import load_territories
 
 __all__ = [
-    "load_territories",
+    "generate_price_points_for_subscription",
     "load_price_tiers",
     "load_sample_app",
-    "generate_price_points_for_subscription",
+    "load_territories",
 ]
