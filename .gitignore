@@ -68,3 +68,4 @@ yooz-whisper-subscriptions.yaml
 # Only exclude user-specific global settings:
 # ~/.claude/ (global config, not project)
 .serena/
+coverage.json
