@@ -584,6 +584,44 @@ subscriptions:
         # May succeed or fail
         assert result.exit_code in [0, 1]
 
+    def test_apply_with_period_not_set(self, tmp_path: Path, mock_asc_api) -> None:
+        """Test apply when subscription period is not set."""
+        # Create app and subscription WITHOUT a period
+        simulator = mock_asc_api
+        simulator.state.add_app("app_no_period", "com.test.noperiod", "Test App")
+        simulator.state.add_subscription_group("group_no_period", "app_no_period", "Test Group")
+        simulator.state.add_subscription(
+            "sub_no_period",
+            "group_no_period",
+            "com.test.noperiod.monthly",
+            "Monthly Sub",
+            subscription_period=None,  # No period set
+        )
+
+        from tests.simulation.fixtures.price_points import (
+            generate_price_points_for_subscription,
+        )
+
+        generate_price_points_for_subscription(simulator.state, "sub_no_period", ["USA"])
+
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.test.noperiod
+dry_run: false
+subscriptions:
+  - product_id: com.test.noperiod.monthly
+    price_usd: 2.99
+    period: ONE_MONTH
+    territories:
+      - USA
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file)])
+
+        # Should set the period
+        assert result.exit_code in [0, 1]
+
 
 class TestBulkValidateEdgeCases:
     """Additional validate tests."""

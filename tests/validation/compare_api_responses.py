@@ -82,7 +82,7 @@ class ResponseComparator:
                             )
             elif real_val != sim_val:
                 # For values, check type first
-                if type(real_val) != type(sim_val):
+                if type(real_val) is not type(sim_val):
                     diffs.append(
                         f"{path}.{key}: Type mismatch (real={type(real_val).__name__}, "
                         f"sim={type(sim_val).__name__})"
