@@ -134,7 +134,11 @@ class TestSubscriptionsCheckEdgeCases:
         # Add pricing
         generate_price_points_for_subscription(simulator.state, "sub_ready")
         simulator.state.set_subscription_availability("sub_ready", ["USA"])
-        simulator.state.add_subscription_price("sub_ready", "USA", 2990000)
+        simulator.state.add_subscription_price(
+            price_id="price_sub_ready_2",
+            subscription_id="sub_ready",
+            price_point_id="pp_sub_ready_USA_tier_30",
+        )
 
         result = runner.invoke(app, ["subscriptions", "check", "com.ready.app"])
 
@@ -353,7 +357,14 @@ class TestSubscriptionsOffersEdgeCases:
         """Test offers delete when user doesn't confirm."""
         # Create an offer first
         simulator = mock_asc_with_app
-        simulator.state.add_introductory_offer("offer_123", "sub_app_123", "FREE_TRIAL", "P1W", 1)
+        simulator.state.add_introductory_offer(
+            offer_id="offer_123",
+            subscription_id="sub_app_123",
+            territory_id="USA",
+            offer_mode="FREE_TRIAL",
+            duration="ONE_WEEK",
+            number_of_periods=1,
+        )
 
         # Mock user declining confirmation
         result = runner.invoke(
@@ -473,7 +484,11 @@ class TestSubscriptionsCheckWithPricing:
         # Set up a subscription with pricing
         generate_price_points_for_subscription(simulator.state, "sub_app_123")
         simulator.state.set_subscription_availability("sub_app_123", ["USA"])
-        simulator.state.add_subscription_price("sub_app_123", "USA", 2990000)
+        simulator.state.add_subscription_price(
+            price_id="price_sub_app_123_3",
+            subscription_id="sub_app_123",
+            price_point_id="pp_sub_app_123_USA_tier_30",
+        )
 
         result = runner.invoke(app, ["subscriptions", "check", "com.example.test"])
 

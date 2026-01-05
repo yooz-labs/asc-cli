@@ -23,7 +23,12 @@ class TestSubscriptionsIntegration:
         # Add pricing to trigger pricing check
         generate_price_points_for_subscription(simulator.state, "sub_app_123", ["USA"])
         simulator.state.set_subscription_availability("sub_app_123", ["USA"])
-        simulator.state.add_subscription_price("sub_app_123", "USA", 2990000)
+        # Set price to $29.99 tier for USA
+        simulator.state.add_subscription_price(
+            price_id="price_sub_app_123_1",
+            subscription_id="sub_app_123",
+            price_point_id="pp_sub_app_123_USA_tier_30",
+        )
 
         # Add localization
         simulator.state.add_subscription_localization(
@@ -64,7 +69,11 @@ class TestSubscriptionsIntegration:
         )
         generate_price_points_for_subscription(simulator.state, "sub_test", ["USA"])
         simulator.state.set_subscription_availability("sub_test", ["USA"])
-        simulator.state.add_subscription_price("sub_test", "USA", 2990000)
+        simulator.state.add_subscription_price(
+            price_id="price_sub_test_1",
+            subscription_id="sub_test",
+            price_point_id="pp_sub_test_USA_tier_30",
+        )
 
         result = runner.invoke(app, ["subscriptions", "check", "com.test.app"])
 
@@ -99,7 +108,11 @@ class TestSubscriptionsIntegration:
         )
         generate_price_points_for_subscription(simulator.state, "sub_ready", ["USA"])
         simulator.state.set_subscription_availability("sub_ready", ["USA"])
-        simulator.state.add_subscription_price("sub_ready", "USA", 2990000)
+        simulator.state.add_subscription_price(
+            price_id="price_sub_ready_1",
+            subscription_id="sub_ready",
+            price_point_id="pp_sub_ready_USA_tier_30",
+        )
 
         result = runner.invoke(app, ["subscriptions", "check", "com.ready.app"])
 
@@ -168,7 +181,14 @@ class TestOffersIntegration:
     def test_offers_delete_with_force(self, mock_asc_with_app) -> None:
         """Test offers delete with --force flag."""
         simulator = mock_asc_with_app
-        simulator.state.add_introductory_offer("offer_123", "sub_app_123", "FREE_TRIAL", "P1W", 1)
+        simulator.state.add_introductory_offer(
+            offer_id="offer_123",
+            subscription_id="sub_app_123",
+            territory_id="USA",
+            offer_mode="FREE_TRIAL",
+            duration="ONE_WEEK",
+            number_of_periods=1,
+        )
 
         result = runner.invoke(
             app,
@@ -209,7 +229,11 @@ class TestClientIntegration:
         simulator = mock_asc_with_app
         generate_price_points_for_subscription(simulator.state, "sub_app_123", ["USA"])
         simulator.state.set_subscription_availability("sub_app_123", ["USA"])
-        simulator.state.add_subscription_price("sub_app_123", "USA", 2990000)
+        simulator.state.add_subscription_price(
+            price_id="price_sub_app_123_2",
+            subscription_id="sub_app_123",
+            price_point_id="pp_sub_app_123_USA_tier_30",
+        )
 
         client = AppStoreConnectClient()
         try:
@@ -255,7 +279,14 @@ class TestClientIntegration:
         from asc_cli.api.client import AppStoreConnectClient
 
         simulator = mock_asc_with_app
-        simulator.state.add_introductory_offer("offer_1", "sub_app_123", "FREE_TRIAL", "P1W", 1)
+        simulator.state.add_introductory_offer(
+            offer_id="offer_1",
+            subscription_id="sub_app_123",
+            territory_id="USA",
+            offer_mode="FREE_TRIAL",
+            duration="ONE_WEEK",
+            number_of_periods=1,
+        )
 
         client = AppStoreConnectClient()
         try:
@@ -269,7 +300,14 @@ class TestClientIntegration:
         from asc_cli.api.client import AppStoreConnectClient
 
         simulator = mock_asc_with_app
-        simulator.state.add_introductory_offer("offer_del", "sub_app_123", "FREE_TRIAL", "P1W", 1)
+        simulator.state.add_introductory_offer(
+            offer_id="offer_del",
+            subscription_id="sub_app_123",
+            territory_id="USA",
+            offer_mode="FREE_TRIAL",
+            duration="ONE_WEEK",
+            number_of_periods=1,
+        )
 
         client = AppStoreConnectClient()
         try:
