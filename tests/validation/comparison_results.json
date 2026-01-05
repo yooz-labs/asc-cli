@@ -1,0 +1,37 @@
+{
+  "results": [
+    {
+      "endpoint": "GET /apps?filter[bundleId]=live.yooz.whisper",
+      "status": "FAIL",
+      "discrepancies": [
+        "app.relationships: Missing in simulation"
+      ]
+    },
+    {
+      "endpoint": "GET /apps/6757027131/subscriptionGroups",
+      "status": "FAIL",
+      "discrepancies": [
+        "group.relationships: Missing in simulation"
+      ]
+    },
+    {
+      "endpoint": "GET /subscriptionGroups/21869778/subscriptions",
+      "status": "FAIL",
+      "discrepancies": [
+        "subscription.relationships: Missing in simulation",
+        "subscription.attributes.reviewNote: Type mismatch (real=str, sim=NoneType)",
+        "subscription.relationships: Missing in simulation",
+        "subscription.attributes.reviewNote: Type mismatch (real=str, sim=NoneType)",
+        "subscription.relationships: Missing in simulation",
+        "subscription.attributes.reviewNote: Type mismatch (real=str, sim=NoneType)",
+        "subscription.relationships: Missing in simulation",
+        "subscription.attributes.reviewNote: Type mismatch (real=str, sim=NoneType)"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3
+  }
+}

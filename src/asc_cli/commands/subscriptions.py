@@ -2,11 +2,12 @@
 
 import asyncio
 
+import httpx
 import typer
 from rich.console import Console
 from rich.table import Table
 
-from asc_cli.api.client import AppStoreConnectClient
+from asc_cli.api.client import APIError, AppStoreConnectClient
 
 app = typer.Typer(help="Manage subscriptions and pricing.")
 console = Console()
@@ -69,6 +70,129 @@ def list_subscriptions(
             await client.close()
 
     asyncio.run(_list())
+
+
+@app.command("check")
+def check_subscriptions(
+    bundle_id: str = typer.Argument(..., help="App bundle ID"),
+) -> None:
+    """Check subscription readiness and identify missing requirements.
+
+    Validates that subscriptions have:
+    - Subscription period (billing cycle) configured
+    - At least one localization (name/description)
+    - Pricing configured
+
+    If all three are set but state is still MISSING_METADATA,
+    suggests uploading App Store review screenshots.
+    """
+
+    async def _check() -> None:
+        client = AppStoreConnectClient()
+        try:
+            app_data = await client.get_app(bundle_id)
+            if not app_data:
+                console.print(f"[red]App not found:[/red] {bundle_id}")
+                raise typer.Exit(1)
+
+            app_id = app_data["id"]
+            groups = await client.list_subscription_groups(app_id)
+
+            if not groups:
+                console.print("[dim]No subscription groups found[/dim]")
+                return
+
+            all_ready = True
+            needs_screenshot_hint = False
+
+            for group in groups:
+                group_id = group["id"]
+                group_name = group["attributes"]["referenceName"]
+                console.print(f"\n[bold]Group:[/bold] {group_name}")
+
+                subs = await client.list_subscriptions(group_id)
+                if not subs:
+                    console.print("  [dim]No subscriptions[/dim]")
+                    continue
+
+                for sub in subs:
+                    sub_id = sub["id"]
+                    attrs = sub.get("attributes", {})
+                    name = attrs.get("name", "Unknown")
+                    product_id = attrs.get("productId", "")
+                    state = attrs.get("state", "")
+                    period = attrs.get("subscriptionPeriod")
+
+                    console.print(f"\n  [bold]{name}[/bold] ({product_id})")
+                    console.print(f"    State: {state}")
+
+                    # Check requirements
+                    issues: list[str] = []
+                    checks_passed = 0
+
+                    # 1. Check subscription period
+                    if period:
+                        console.print(f"    [green]✓[/green] Period: {period}")
+                        checks_passed += 1
+                    else:
+                        console.print("    [red]✗[/red] Period: Not set")
+                        issues.append("Set subscription period in App Store Connect")
+
+                    # 2. Check localizations
+                    localizations = await client.list_subscription_localizations(sub_id)
+                    if localizations:
+                        locale_count = len(localizations)
+                        console.print(f"    [green]✓[/green] Localizations: {locale_count}")
+                        checks_passed += 1
+                    else:
+                        console.print("    [red]✗[/red] Localizations: None")
+                        issues.append("Add at least one localization (name/description)")
+
+                    # 3. Check pricing
+                    prices = await client.list_subscription_prices(sub_id)
+                    if prices:
+                        price_count = len(prices)
+                        console.print(f"    [green]✓[/green] Pricing: {price_count} territories")
+                        checks_passed += 1
+                    else:
+                        console.print("    [red]✗[/red] Pricing: Not configured")
+                        issues.append("Set pricing with: asc subscriptions pricing set")
+
+                    # Summary for this subscription
+                    if state == "MISSING_METADATA" and checks_passed == 3:
+                        console.print(
+                            "    [yellow]![/yellow] All API checks passed "
+                            "but state is MISSING_METADATA"
+                        )
+                        console.print(
+                            "    [dim]→ Upload App Store review screenshot "
+                            "in App Store Connect[/dim]"
+                        )
+                        needs_screenshot_hint = True
+                    elif state != "READY_TO_SUBMIT" and issues:
+                        all_ready = False
+                        console.print("    [yellow]Issues:[/yellow]")
+                        for issue in issues:
+                            console.print(f"      • {issue}")
+
+            # Final summary
+            console.print("\n" + "─" * 50)
+            if all_ready and not needs_screenshot_hint:
+                console.print("[green]All subscriptions ready![/green]")
+            elif needs_screenshot_hint:
+                console.print(
+                    "[yellow]Note:[/yellow] Some subscriptions may need review screenshots"
+                )
+                console.print(
+                    "[dim]Screenshots must be uploaded via App Store Connect web UI[/dim]"
+                )
+            else:
+                console.print("[yellow]Some subscriptions have missing requirements[/yellow]")
+
+        finally:
+            await client.close()
+
+    asyncio.run(_check())
 
 
 @pricing_app.command("list")
@@ -212,6 +336,7 @@ def set_pricing(
 
                 success_count = 0
                 error_count = 0
+                failed_territories = []
 
                 for pp in equalized_points:
                     pp_id = pp["id"]
@@ -228,10 +353,12 @@ def set_pricing(
                             price_point_id=pp_id,
                         )
                         success_count += 1
-                    except Exception as e:
+                    except (httpx.HTTPStatusError, APIError) as e:
                         error_count += 1
-                        if error_count <= 3:  # Show first few errors
-                            console.print(f"[red]Error setting {territory}:[/red] {e}")
+                        error_msg = str(e)
+                        failed_territories.append((territory, error_msg))
+                        if error_count <= 3:  # Show first few errors inline
+                            console.print(f"[red]Error setting {territory}:[/red] {error_msg}")
 
                     progress.advance(task)
 
@@ -240,6 +367,11 @@ def set_pricing(
             )
             if error_count > 0:
                 console.print(f"[yellow]Failed for {error_count} territories[/yellow]")
+                if error_count > 3:
+                    console.print(
+                        "[dim]Showing first 3 errors. "
+                        "Run with increased verbosity for full error list.[/dim]"
+                    )
 
         finally:
             await client.close()
@@ -456,6 +588,7 @@ def create_offer(
 
                 success_count = 0
                 error_count = 0
+                failed_territories = []
 
                 for territory_id in target_territories:
                     try:
@@ -468,16 +601,23 @@ def create_offer(
                             subscription_price_point_id=price_point_id,
                         )
                         success_count += 1
-                    except Exception as e:
+                    except (httpx.HTTPStatusError, APIError) as e:
                         error_count += 1
-                        if error_count <= 3:
-                            console.print(f"[red]Error for {territory_id}:[/red] {e}")
+                        error_msg = str(e)
+                        failed_territories.append((territory_id, error_msg))
+                        if error_count <= 3:  # Show first few errors inline
+                            console.print(f"[red]Error for {territory_id}:[/red] {error_msg}")
 
                     progress.advance(task)
 
             console.print(f"\n[green]Created offers for {success_count} territories[/green]")
             if error_count > 0:
                 console.print(f"[yellow]Failed for {error_count} territories[/yellow]")
+                if error_count > 3:
+                    console.print(
+                        "[dim]Showing first 3 errors. "
+                        "Run with increased verbosity for full error list.[/dim]"
+                    )
 
         finally:
             await client.close()

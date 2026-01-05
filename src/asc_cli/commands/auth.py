@@ -56,7 +56,7 @@ def login(
     # Read and validate the key
     try:
         private_key = key_path.read_text()
-        if "BEGIN PRIVATE KEY" not in private_key:
+        if "BEGIN" not in private_key or "PRIVATE KEY" not in private_key:
             console.print("[red]Error:[/red] Invalid private key format")
             raise typer.Exit(1)
     except Exception as e:

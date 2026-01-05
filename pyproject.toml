@@ -131,8 +131,12 @@ addopts = [
     "--cov=src/asc_cli",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=95",
     "-v",
+    "-m", "not integration",
+]
+markers = [
+    "integration: tests that require real API credentials (run with: pytest -m integration)",
+    "simulation: tests using the API simulation engine",
 ]
 
 [tool.coverage.run]

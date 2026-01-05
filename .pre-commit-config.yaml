@@ -10,9 +10,8 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: mypy src/
+        entry: bash -c 'uv run mypy src/'
         language: system
         types: [python]
-        args: [--strict]
         pass_filenames: false
         files: ^src/

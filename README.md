@@ -4,6 +4,7 @@ A powerful command-line interface for Apple App Store Connect API.
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![codecov](https://codecov.io/github/yooz-labs/asc-cli/graph/badge.svg?token=8XGCPL63LP)](https://codecov.io/github/yooz-labs/asc-cli)
 
 ## Overview
 

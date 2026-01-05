@@ -359,19 +359,30 @@ class AppStoreConnectClient:
         result = await self.get("territories", {"limit": 200})
         return result.get("data", [])  # type: ignore[no-any-return]
 
+    async def list_subscription_localizations(self, subscription_id: str) -> list[dict[str, Any]]:
+        """List localizations for a subscription."""
+        result = await self.get(f"subscriptions/{subscription_id}/subscriptionLocalizations")
+        return result.get("data", [])  # type: ignore[no-any-return]
+
     async def get_subscription_availability(
         self,
         subscription_id: str,
     ) -> dict[str, Any] | None:
         """Get subscription availability settings."""
+        import httpx
+
         try:
             result = await self.get(
                 f"subscriptions/{subscription_id}/subscriptionAvailability",
                 {"include": "availableTerritories"},
             )
             return result.get("data")
-        except Exception:
-            return None
+        except httpx.HTTPStatusError as e:
+            # 404 is expected when no availability is set yet
+            if e.response.status_code == 404:
+                return None
+            # Re-raise other HTTP errors (401, 403, 429, 500, etc.)
+            raise
 
     async def set_subscription_availability(
         self,
