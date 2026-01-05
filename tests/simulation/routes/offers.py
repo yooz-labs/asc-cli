@@ -57,8 +57,16 @@ def handle_create_introductory_offer(
         data = request.json() if hasattr(request, "json") else {}
         if callable(data):
             data = data()
-    except Exception:
-        data = {}
+    except Exception as e:
+        return httpx.Response(
+            400,
+            json=build_error_response(
+                400,
+                "INVALID_REQUEST_BODY",
+                "INVALID_REQUEST_BODY",
+                f"Invalid JSON in request body: {e}",
+            ),
+        )
 
     # Get subscription ID first to check period
     relationships = data.get("data", {}).get("relationships", {})

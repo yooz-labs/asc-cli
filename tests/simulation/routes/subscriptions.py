@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 from tests.simulation.responses import (
+    build_error_response,
     build_not_found_error,
     build_resource,
     build_response,
@@ -270,14 +271,20 @@ def handle_create_subscription_availability(
         data = request.json() if hasattr(request, "json") else {}
         if callable(data):
             data = data()
-    except Exception:
-        data = {}
+    except Exception as e:
+        return httpx.Response(
+            400,
+            json=build_error_response(
+                400,
+                "INVALID_REQUEST_BODY",
+                "INVALID_REQUEST_BODY",
+                f"Invalid JSON in request body: {e}",
+            ),
+        )
 
     try:
         validate_subscription_availability_request(data)
     except ValidationError as e:
-        from tests.simulation.responses import build_error_response
-
         return httpx.Response(
             e.status,
             json=build_error_response(e.status, e.code, e.code, e.detail),
