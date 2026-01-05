@@ -17,6 +17,7 @@ from asc_cli.api.auth import (
     AuthManager,
     Credentials,
 )
+from tests.test_keys import get_test_private_key
 
 
 class TestCredentialsFromFile:
@@ -328,20 +329,12 @@ class TestCredentialsSave:
 class TestAuthManagerTokenGeneration:
     """Tests for AuthManager token generation."""
 
-    # Valid EC private key for testing
-    # Generated with: openssl ecparam -name prime256v1 -genkey -noout
-    TEST_EC_PRIVATE_KEY = """-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
-AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
-ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
------END EC PRIVATE KEY-----"""
-
     def test_token_generation(self) -> None:
         """Test JWT token is generated correctly."""
         creds = Credentials(
             issuer_id="test-issuer",
             key_id="TESTKEY123",
-            private_key=self.TEST_EC_PRIVATE_KEY,
+            private_key=get_test_private_key(),
         )
         auth = AuthManager(creds)
 
@@ -361,7 +354,7 @@ ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
         creds = Credentials(
             issuer_id="test-issuer",
             key_id="TESTKEY123",
-            private_key=self.TEST_EC_PRIVATE_KEY,
+            private_key=get_test_private_key(),
         )
         auth = AuthManager(creds)
 
@@ -376,7 +369,7 @@ ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
         creds = Credentials(
             issuer_id="test-issuer",
             key_id="TESTKEY123",
-            private_key=self.TEST_EC_PRIVATE_KEY,
+            private_key=get_test_private_key(),
         )
         auth = AuthManager(creds)
 

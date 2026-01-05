@@ -72,6 +72,8 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
+        env:
+          ASC_TEST_PRIVATE_KEY: ${{ secrets.ASC_TEST_PRIVATE_KEY }}
         run: uv run pytest --cov --cov-report=xml --cov-fail-under=90
 
       - name: Upload coverage

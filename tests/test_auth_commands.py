@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 
 from asc_cli.api.auth import CREDENTIALS_FILE
 from asc_cli.cli import app
+from tests.test_keys import get_test_private_key
 
 runner = CliRunner()
 
@@ -19,12 +20,7 @@ class TestAuthLogin:
         """Test login with all options provided."""
         # Create a test key file
         key_file = tmp_path / "test_key.p8"
-        key_content = """-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
-AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
-ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
------END EC PRIVATE KEY-----"""
-        key_file.write_text(key_content)
+        key_file.write_text(get_test_private_key())
 
         result = runner.invoke(
             app,
@@ -89,12 +85,7 @@ ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
         """Test login in interactive mode."""
         # Create a test key file
         key_file = tmp_path / "test_key.p8"
-        key_content = """-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
-AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
-ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
------END EC PRIVATE KEY-----"""
-        key_file.write_text(key_content)
+        key_file.write_text(get_test_private_key())
 
         # Mock Prompt.ask to provide interactive input
         with patch("asc_cli.commands.auth.Prompt.ask") as mock_prompt:
@@ -138,19 +129,12 @@ class TestAuthStatus:
 
     def test_status_when_authenticated(self, tmp_path: Path) -> None:
         """Test status command when authenticated."""
-        # Set up test credentials
-        key_content = """-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
-AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
-ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
------END EC PRIVATE KEY-----"""
-
         with patch.dict(
             os.environ,
             {
                 "ASC_ISSUER_ID": "test-issuer",
                 "ASC_KEY_ID": "test-key",
-                "ASC_PRIVATE_KEY": key_content,
+                "ASC_PRIVATE_KEY": get_test_private_key(),
             },
         ):
             result = runner.invoke(app, ["auth", "status"])
@@ -200,12 +184,7 @@ class TestAuthLogout:
         """Test logout removes stored credentials."""
         # First login to create credentials
         key_file = tmp_path / "test_key.p8"
-        key_content = """-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIKsQyM6o5V0A9xxruTQZpj/0ZxVLYixgbj0FCcifI0NAoAoGCCqGSM49
-AwEHoUQDQgAEXYy3zF3er3NkqpyTaJX+x0jhn3l5Zgv89eBb727jouJnKqtOMZL7
-ajPlCHDPHjNwbt6SCWOC5+1XV1VwTgplgw==
------END EC PRIVATE KEY-----"""
-        key_file.write_text(key_content)
+        key_file.write_text(get_test_private_key())
 
         # Login first
         result = runner.invoke(
