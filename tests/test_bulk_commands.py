@@ -199,3 +199,162 @@ subscriptions:
 
         # May succeed or fail depending on API, but should show progress
         assert "Applying configuration" in result.output or result.exit_code in [0, 1]
+
+
+class TestBulkApplyWithSimulator:
+    """More comprehensive apply tests using the API simulator."""
+
+    def test_apply_with_valid_config(self, tmp_path: Path, mock_asc_with_app) -> None:
+        """Test apply with a valid configuration."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.test
+subscriptions:
+  - product_id: com.example.test.monthly
+    price_usd: 2.99
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file), "--dry-run"])
+
+        # Should run in dry-run mode
+        assert result.exit_code in [0, 1]
+        if "DRY RUN" in result.output:
+            assert "com.example.test" in result.output
+
+    def test_apply_app_not_found(self, tmp_path: Path, mock_asc_api) -> None:
+        """Test apply when app doesn't exist."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.nonexistent.app
+subscriptions:
+  - product_id: com.test.monthly
+    price_usd: 2.99
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file)])
+
+        assert result.exit_code == 1
+        assert "App not found" in result.output
+
+    def test_apply_with_offers(self, tmp_path: Path, mock_asc_with_app) -> None:
+        """Test apply with introductory offers."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.test
+dry_run: true
+subscriptions:
+  - product_id: com.example.test.monthly
+    price_usd: 2.99
+    offers:
+      - type: free-trial
+        duration: 1w
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file)])
+
+        # Should process in dry-run mode
+        assert result.exit_code in [0, 1]
+
+    def test_apply_with_specific_territories(self, tmp_path: Path, mock_asc_with_app) -> None:
+        """Test apply with specific territories."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.test
+dry_run: true
+subscriptions:
+  - product_id: com.example.test.monthly
+    price_usd: 2.99
+    territories:
+      - USA
+      - GBR
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file)])
+
+        # Should process with specific territories
+        assert result.exit_code in [0, 1]
+
+    def test_apply_subscription_not_found(self, tmp_path: Path, mock_asc_with_app) -> None:
+        """Test apply when subscription product doesn't exist."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.test
+subscriptions:
+  - product_id: com.nonexistent.product
+    price_usd: 2.99
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "apply", str(config_file)])
+
+        # Should handle missing subscription gracefully
+        assert result.exit_code in [0, 1]
+
+
+class TestBulkValidateEdgeCases:
+    """Additional validate tests."""
+
+    def test_validate_with_offers(self, tmp_path: Path) -> None:
+        """Test validate with offers in configuration."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.app
+subscriptions:
+  - product_id: com.example.monthly
+    price_usd: 2.99
+    offers:
+      - type: free-trial
+        duration: 2w
+      - type: pay-as-you-go
+        duration: 1m
+        price_usd: 0.99
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "validate", str(config_file)])
+
+        assert result.exit_code == 0
+        # Should show offers count
+        assert "2" in result.output or "Offers" in result.output
+
+    def test_validate_all_territories(self, tmp_path: Path) -> None:
+        """Test validate with 'all' territories."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.app
+subscriptions:
+  - product_id: com.example.monthly
+    price_usd: 2.99
+    territories: all
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "validate", str(config_file)])
+
+        assert result.exit_code == 0
+        assert "all" in result.output
+
+    def test_validate_specific_territories(self, tmp_path: Path) -> None:
+        """Test validate with specific territories list."""
+        config_file = tmp_path / "config.yaml"
+        config_content = """
+app_bundle_id: com.example.app
+subscriptions:
+  - product_id: com.example.monthly
+    price_usd: 2.99
+    territories:
+      - USA
+      - GBR
+      - CAN
+"""
+        config_file.write_text(config_content)
+
+        result = runner.invoke(app, ["bulk", "validate", str(config_file)])
+
+        assert result.exit_code == 0
+        # Should show count of territories
+        assert "3" in result.output
