@@ -22,11 +22,22 @@ def get_test_private_key() -> str:
     Returns the key from ASC_TEST_PRIVATE_KEY env var if set,
     otherwise generates a new P-256 key.
 
+    The env var can be either:
+    - Full PEM format with headers
+    - Raw base64 key content (headers will be added)
+
     Returns:
         PEM-encoded EC private key string
     """
     env_key = os.environ.get("ASC_TEST_PRIVATE_KEY")
     if env_key:
+        # If key doesn't have PEM headers, wrap it
+        if not env_key.strip().startswith("-----BEGIN"):
+            env_key = (
+                "-----BEGIN EC PRIVATE KEY-----\n"
+                + env_key.strip()
+                + "\n-----END EC PRIVATE KEY-----"
+            )
         return env_key
 
     # Generate a test key dynamically
