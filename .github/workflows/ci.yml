@@ -72,7 +72,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
-        run: uv run pytest --cov --cov-report=xml --cov-fail-under=78
+        run: uv run pytest --cov --cov-report=xml --cov-fail-under=90
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
