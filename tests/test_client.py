@@ -1,6 +1,6 @@
 """Tests for API client."""
 
-from asc_cli.api.client import APIError, AppStoreConnectClient
+from asc_cli.api.client import AppStoreConnectClient
 
 
 class TestClientProperties:
@@ -152,13 +152,59 @@ class TestClientMethods:
         finally:
             await client.close()
 
-    async def test_patch_subscription(self, mock_asc_with_app) -> None:
-        """Test PATCH request to update subscription."""
+    async def test_post_subscription_price(self, mock_asc_with_app) -> None:
+        """Test POST request to create subscription price."""
+        from tests.simulation.fixtures.price_points import (
+            generate_price_points_for_subscription,
+        )
+
+        simulator = mock_asc_with_app
+        generate_price_points_for_subscription(simulator.state, "sub_app_123", ["USA"])
+
         client = AppStoreConnectClient()
 
         try:
-            # Update subscription period using PATCH
-            # This subscription already has a period set
+            # Get a price point
+            price_points, _ = await client.list_price_points("sub_app_123", territory="USA")
+            assert price_points, "Should have price points"
+
+            # POST should succeed
+            result = await client.post(
+                "subscriptionPrices",
+                {
+                    "data": {
+                        "type": "subscriptionPrices",
+                        "attributes": {},
+                        "relationships": {
+                            "subscription": {
+                                "data": {"type": "subscriptions", "id": "sub_app_123"}
+                            },
+                            "subscriptionPricePoint": {
+                                "data": {
+                                    "type": "subscriptionPricePoints",
+                                    "id": price_points[0]["id"],
+                                }
+                            },
+                        },
+                    }
+                },
+            )
+            # Verify successful POST returns dict (covers line 75)
+            assert isinstance(result, dict)
+            assert result["data"]["type"] == "subscriptionPrices"
+        finally:
+            await client.close()
+
+    async def test_patch_subscription(self, mock_asc_with_app) -> None:
+        """Test PATCH request to update subscription."""
+        simulator = mock_asc_with_app
+        # Ensure the existing subscription has NO period set
+        simulator.state.subscriptions["sub_app_123"]["attributes"]["subscriptionPeriod"] = None
+
+        client = AppStoreConnectClient()
+
+        try:
+            # PATCH should succeed because period is not set
             result = await client.patch(
                 "subscriptions/sub_app_123",
                 {
@@ -169,10 +215,8 @@ class TestClientMethods:
                     }
                 },
             )
-            # Should succeed or raise APIError if period can't be changed
-            assert isinstance(result, dict) or True  # Either succeeds or we tested error path
-        except APIError:
-            # Testing error path is also valid
-            pass
+            # Verify successful PATCH returns dict (covers line 91)
+            assert isinstance(result, dict)
+            assert result["data"]["attributes"]["subscriptionPeriod"] == "ONE_MONTH"
         finally:
             await client.close()

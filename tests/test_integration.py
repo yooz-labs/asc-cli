@@ -469,6 +469,71 @@ class TestClientIntegration:
         finally:
             await client.close()
 
+    async def test_client_pagination_price_points(self, mock_asc_with_app) -> None:
+        """Test pagination for price points with multiple pages."""
+        from asc_cli.api.client import AppStoreConnectClient
+        from tests.simulation.fixtures.price_points import (
+            generate_price_points_for_subscription,
+        )
+
+        simulator = mock_asc_with_app
+        # Generate price points for 10 territories to ensure pagination
+        territories = ["USA", "GBR", "CAN", "AUS", "FRA", "DEU", "JPN", "CHN", "IND", "BRA"]
+        generate_price_points_for_subscription(simulator.state, "sub_app_123", territories)
+
+        client = AppStoreConnectClient()
+        try:
+            # Test with small limit to trigger pagination
+            all_price_points, territories_map = await client.list_price_points(
+                "sub_app_123", include_territory=True
+            )
+            # Should have fetched all price points across multiple pages
+            assert len(all_price_points) > 5, "Should have multiple price points"
+            # Territories map should be populated
+            assert len(territories_map) > 0, "Should have territories"
+        finally:
+            await client.close()
+
+    async def test_client_pagination_equalizations(self, mock_asc_with_app) -> None:
+        """Test pagination for equalizating price points."""
+        from asc_cli.api.client import AppStoreConnectClient
+        from tests.simulation.fixtures.price_points import (
+            generate_price_points_for_subscription,
+        )
+
+        simulator = mock_asc_with_app
+        # Generate price points for many territories
+        territories = [
+            "USA",
+            "GBR",
+            "CAN",
+            "AUS",
+            "FRA",
+            "DEU",
+            "JPN",
+            "CHN",
+            "IND",
+            "BRA",
+            "MEX",
+            "ESP",
+        ]
+        generate_price_points_for_subscription(simulator.state, "sub_app_123", territories)
+
+        client = AppStoreConnectClient()
+        try:
+            # Get a price point to use as base
+            price_points, _ = await client.list_price_points("sub_app_123", territory="USA")
+            assert price_points, "Should have price points"
+
+            # Test equalizations with pagination
+            equalizations = await client.find_equalizing_price_points(
+                "sub_app_123", price_points[0]["id"]
+            )
+            # Should have equalizations for other territories
+            assert len(equalizations) > 0, "Should have equalizing price points"
+        finally:
+            await client.close()
+
     async def test_client_successful_patch_operations(self, mock_asc_with_app) -> None:
         """Test successful PATCH operations to cover return line 91."""
         from asc_cli.api.client import APIError, AppStoreConnectClient

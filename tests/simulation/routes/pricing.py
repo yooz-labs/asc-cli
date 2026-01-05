@@ -18,6 +18,40 @@ if TYPE_CHECKING:
     from tests.simulation.state import StateManager
 
 
+def _build_pagination_links(
+    request: httpx.Request,
+    total_items: int,
+    limit: int,
+    offset: int,
+) -> dict[str, str] | None:
+    """Build pagination links for a response.
+
+    Args:
+        request: The HTTP request
+        total_items: Total number of items available
+        limit: Items per page
+        offset: Current offset
+
+    Returns:
+        Links dict with 'next' if more pages exist, None otherwise
+    """
+    if offset + limit >= total_items:
+        return None
+
+    # Build next URL with updated offset
+    next_offset = offset + limit
+    base_url = str(request.url).split("?")[0]
+    params = dict(request.url.params)
+    params["limit"] = str(limit)
+    params["offset"] = str(next_offset)
+
+    # Build query string
+    query_parts = [f"{k}={v}" for k, v in params.items()]
+    next_url = f"{base_url}?{'&'.join(query_parts)}"
+
+    return {"next": next_url}
+
+
 def handle_list_price_points(
     request: httpx.Request,
     state: "StateManager",
@@ -28,7 +62,8 @@ def handle_list_price_points(
     Supports:
         - filter[territory]: Filter by territory ID
         - include=territory: Include territory data
-        - limit: Maximum items to return
+        - limit: Maximum items to return (default: 200)
+        - offset: Pagination offset
     """
     if subscription_id not in state.subscriptions:
         return httpx.Response(404, json=build_not_found_error("Subscription", subscription_id))
@@ -48,12 +83,20 @@ def handle_list_price_points(
             == territory_filter
         ]
 
+    # Get pagination parameters
+    limit = int(params.get("limit", "200"))
+    offset = int(params.get("offset", "0"))
+    total_items = len(price_points)
+
+    # Apply pagination
+    paginated_price_points = price_points[offset : offset + limit]
+
     # Build response data
     data = []
     included = []
     include_territory = "territory" in params.get("include", "")
 
-    for pp in price_points:
+    for pp in paginated_price_points:
         resource = build_resource(
             "subscriptionPricePoints",
             pp["id"],
@@ -85,9 +128,14 @@ def handle_list_price_points(
             seen_ids.add(item["id"])
             unique_included.append(item)
 
+    # Build pagination links
+    links = _build_pagination_links(request, total_items, limit, offset)
+
     return httpx.Response(
         200,
-        json=build_response(data, included=unique_included if unique_included else None),
+        json=build_response(
+            data, included=unique_included if unique_included else None, links=links
+        ),
     )
 
 
@@ -191,6 +239,7 @@ def handle_list_price_point_equalizations(
     """Handle GET /subscriptionPricePoints/{price_point_id}/equalizations.
 
     Returns equalized prices for other territories based on the given price point.
+    Supports pagination with limit/offset parameters.
     """
     if price_point_id not in state.subscription_price_points:
         return httpx.Response(
@@ -210,6 +259,15 @@ def handle_list_price_point_equalizations(
         != base_territory
     ]
 
+    # Get pagination parameters
+    params = dict(request.url.params)
+    limit = int(params.get("limit", "200"))
+    offset = int(params.get("offset", "0"))
+    total_items = len(equalizations)
+
+    # Apply pagination
+    paginated_equalizations = equalizations[offset : offset + limit]
+
     data = [
         build_resource(
             "subscriptionPricePoints",
@@ -217,7 +275,10 @@ def handle_list_price_point_equalizations(
             pp["attributes"],
             relationships=pp.get("relationships"),
         )
-        for pp in equalizations
+        for pp in paginated_equalizations
     ]
 
-    return httpx.Response(200, json=build_response(data))
+    # Build pagination links
+    links = _build_pagination_links(request, total_items, limit, offset)
+
+    return httpx.Response(200, json=build_response(data, links=links))
