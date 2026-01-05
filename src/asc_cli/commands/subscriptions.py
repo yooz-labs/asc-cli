@@ -2,11 +2,12 @@
 
 import asyncio
 
+import httpx
 import typer
 from rich.console import Console
 from rich.table import Table
 
-from asc_cli.api.client import AppStoreConnectClient
+from asc_cli.api.client import APIError, AppStoreConnectClient
 
 app = typer.Typer(help="Manage subscriptions and pricing.")
 console = Console()
@@ -335,6 +336,7 @@ def set_pricing(
 
                 success_count = 0
                 error_count = 0
+                failed_territories = []
 
                 for pp in equalized_points:
                     pp_id = pp["id"]
@@ -351,10 +353,12 @@ def set_pricing(
                             price_point_id=pp_id,
                         )
                         success_count += 1
-                    except Exception as e:
+                    except (httpx.HTTPStatusError, APIError) as e:
                         error_count += 1
-                        if error_count <= 3:  # Show first few errors
-                            console.print(f"[red]Error setting {territory}:[/red] {e}")
+                        error_msg = str(e)
+                        failed_territories.append((territory, error_msg))
+                        if error_count <= 3:  # Show first few errors inline
+                            console.print(f"[red]Error setting {territory}:[/red] {error_msg}")
 
                     progress.advance(task)
 
@@ -363,6 +367,11 @@ def set_pricing(
             )
             if error_count > 0:
                 console.print(f"[yellow]Failed for {error_count} territories[/yellow]")
+                if error_count > 3:
+                    console.print(
+                        "[dim]Showing first 3 errors. "
+                        "Run with increased verbosity for full error list.[/dim]"
+                    )
 
         finally:
             await client.close()
@@ -579,6 +588,7 @@ def create_offer(
 
                 success_count = 0
                 error_count = 0
+                failed_territories = []
 
                 for territory_id in target_territories:
                     try:
@@ -591,16 +601,23 @@ def create_offer(
                             subscription_price_point_id=price_point_id,
                         )
                         success_count += 1
-                    except Exception as e:
+                    except (httpx.HTTPStatusError, APIError) as e:
                         error_count += 1
-                        if error_count <= 3:
-                            console.print(f"[red]Error for {territory_id}:[/red] {e}")
+                        error_msg = str(e)
+                        failed_territories.append((territory_id, error_msg))
+                        if error_count <= 3:  # Show first few errors inline
+                            console.print(f"[red]Error for {territory_id}:[/red] {error_msg}")
 
                     progress.advance(task)
 
             console.print(f"\n[green]Created offers for {success_count} territories[/green]")
             if error_count > 0:
                 console.print(f"[yellow]Failed for {error_count} territories[/yellow]")
+                if error_count > 3:
+                    console.print(
+                        "[dim]Showing first 3 errors. "
+                        "Run with increased verbosity for full error list.[/dim]"
+                    )
 
         finally:
             await client.close()
