@@ -149,3 +149,148 @@ def mock_asc_missing_period(asc_simulator: ASCSimulator):
     )
     with asc_simulator.mock_context():
         yield asc_simulator
+
+
+@pytest.fixture
+def mock_asc_with_testflight(asc_simulator: ASCSimulator):
+    """Simulator with TestFlight data: builds, groups, testers.
+
+    Creates:
+        - App with ID "app_123"
+        - Multiple builds (0.2.5, 0.2.6, 0.2.7)
+        - Beta groups (internal, external)
+        - Beta testers
+        - Build localizations (What's New)
+
+    Yields:
+        ASCSimulator instance with TestFlight data and active mocking
+    """
+    state = asc_simulator.state
+
+    # Add app
+    state.add_app("app_123", "com.example.test", "Test App", "test_sku")
+
+    # Add builds (version is CFBundleVersion = build number for API filtering)
+    state.add_build(
+        "build_1",
+        "app_123",
+        version="10",  # Build number - used by API filter[version]
+        build_number="10",
+        processing_state="VALID",
+        uploaded_date="2026-01-01T10:00:00.000Z",
+    )
+    state.add_build(
+        "build_2",
+        "app_123",
+        version="11",  # Build number - used by API filter[version]
+        build_number="11",
+        processing_state="VALID",
+        uploaded_date="2026-01-03T10:00:00.000Z",
+    )
+    state.add_build(
+        "build_3",
+        "app_123",
+        version="13",  # Build number - used by API filter[version]
+        build_number="13",
+        processing_state="VALID",
+        uploaded_date="2026-01-05T10:00:00.000Z",
+    )
+
+    # Add beta groups
+    state.add_beta_group(
+        "group_internal",
+        "app_123",
+        "Internal Testers",
+        is_internal=True,
+        feedback_enabled=True,
+    )
+    state.add_beta_group(
+        "group_external",
+        "app_123",
+        "External Testers",
+        is_internal=False,
+        public_link_enabled=True,
+        public_link_limit=100,
+    )
+
+    # Add beta testers
+    state.add_beta_tester(
+        "tester_1",
+        "alice@example.com",
+        first_name="Alice",
+        last_name="Smith",
+    )
+    state.add_beta_tester(
+        "tester_2",
+        "bob@example.com",
+        first_name="Bob",
+        last_name="Jones",
+    )
+
+    # Add testers to groups
+    state.add_beta_tester_to_group("tester_1", "group_internal")
+    state.add_beta_tester_to_group("tester_2", "group_external")
+
+    # Add build to group
+    state.add_build_to_beta_group("build_3", "group_external")
+
+    # Add beta build localization (What's New)
+    state.add_beta_build_localization(
+        "loc_1",
+        "build_3",
+        "en-US",
+        "Bug fixes and performance improvements",
+    )
+
+    with asc_simulator.mock_context():
+        yield asc_simulator
+
+
+@pytest.fixture
+def mock_asc_whisper_testflight(asc_simulator: ASCSimulator):
+    """Simulator configured like the Whisper app with TestFlight data.
+
+    Creates live.yooz.whisper app with builds and beta groups.
+
+    Yields:
+        ASCSimulator instance with Whisper TestFlight data
+    """
+    state = asc_simulator.state
+
+    # Add Whisper app
+    state.add_app(
+        "whisper_app",
+        "live.yooz.whisper",
+        "Yooz Whisper",
+        "yooz_whisper",
+    )
+
+    # Add builds
+    state.add_build(
+        "whisper_build_12",
+        "whisper_app",
+        version="0.2.6",
+        build_number="12",
+        processing_state="VALID",
+        uploaded_date="2026-01-04T10:00:00.000Z",
+    )
+    state.add_build(
+        "whisper_build_13",
+        "whisper_app",
+        version="0.2.7",
+        build_number="13",
+        processing_state="VALID",
+        uploaded_date="2026-01-05T12:00:00.000Z",
+    )
+
+    # Add beta group
+    state.add_beta_group(
+        "whisper_beta",
+        "whisper_app",
+        "Beta Testers",
+        is_internal=False,
+        public_link_enabled=True,
+    )
+
+    with asc_simulator.mock_context():
+        yield asc_simulator
