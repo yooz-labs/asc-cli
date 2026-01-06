@@ -359,6 +359,518 @@ class AppStoreConnectClient:
         result = await self.get("territories", {"limit": 200})
         return result.get("data", [])  # type: ignore[no-any-return]
 
+    # TestFlight Methods
+
+    async def list_builds(
+        self,
+        app_id: str,
+        limit: int = 10,
+        processing_state: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List builds for an app.
+
+        Args:
+            app_id: The app ID
+            limit: Maximum number of builds to return
+            processing_state: Filter by processing state (e.g., "VALID", "PROCESSING")
+
+        Returns:
+            List of build resources
+        """
+        params: dict[str, Any] = {
+            "filter[app]": app_id,
+            "limit": limit,
+            "sort": "-uploadedDate",
+        }
+        if processing_state:
+            params["filter[processingState]"] = processing_state
+
+        result = await self.get("builds", params)
+        return result.get("data", [])  # type: ignore[no-any-return]
+
+    async def get_build(self, build_id: str) -> dict[str, Any]:
+        """Get build details.
+
+        Args:
+            build_id: The build ID
+
+        Returns:
+            Build resource
+        """
+        result = await self.get(f"builds/{build_id}")
+        return result.get("data", {})  # type: ignore[no-any-return]
+
+    async def get_build_by_version(
+        self,
+        app_id: str,
+        version: str,
+    ) -> dict[str, Any] | None:
+        """Find a build by version string.
+
+        Args:
+            app_id: The app ID
+            version: The build version (CFBundleVersion)
+
+        Returns:
+            Build resource or None if not found
+        """
+        params: dict[str, Any] = {
+            "filter[app]": app_id,
+            "filter[version]": version,
+        }
+        result = await self.get("builds", params)
+        builds = result.get("data", [])
+        return builds[0] if builds else None
+
+    async def list_beta_build_localizations(
+        self,
+        build_id: str,
+    ) -> list[dict[str, Any]]:
+        """List beta build localizations (What's New text).
+
+        Args:
+            build_id: The build ID
+
+        Returns:
+            List of beta build localization resources
+        """
+        result = await self.get(f"builds/{build_id}/betaBuildLocalizations")
+        return result.get("data", [])  # type: ignore[no-any-return]
+
+    async def create_beta_build_localization(
+        self,
+        build_id: str,
+        locale: str,
+        whats_new: str,
+    ) -> dict[str, Any]:
+        """Create a beta build localization (What's New text).
+
+        Args:
+            build_id: The build ID
+            locale: Locale code (e.g., "en-US")
+            whats_new: The What's New text
+
+        Returns:
+            Created beta build localization resource
+        """
+        data = {
+            "data": {
+                "type": "betaBuildLocalizations",
+                "attributes": {
+                    "locale": locale,
+                    "whatsNew": whats_new,
+                },
+                "relationships": {"build": {"data": {"type": "builds", "id": build_id}}},
+            }
+        }
+        return await self.post("betaBuildLocalizations", data)
+
+    async def update_beta_build_localization(
+        self,
+        localization_id: str,
+        whats_new: str,
+    ) -> dict[str, Any]:
+        """Update a beta build localization (What's New text).
+
+        Args:
+            localization_id: The localization ID
+            whats_new: The new What's New text
+
+        Returns:
+            Updated beta build localization resource
+        """
+        data = {
+            "data": {
+                "type": "betaBuildLocalizations",
+                "id": localization_id,
+                "attributes": {
+                    "whatsNew": whats_new,
+                },
+            }
+        }
+        return await self.patch(f"betaBuildLocalizations/{localization_id}", data)
+
+    async def get_app_encryption_declaration(
+        self,
+        build_id: str,
+    ) -> dict[str, Any] | None:
+        """Get the encryption declaration for a build.
+
+        Args:
+            build_id: The build ID
+
+        Returns:
+            App encryption declaration resource or None
+        """
+        import httpx
+
+        try:
+            result = await self.get(f"builds/{build_id}/appEncryptionDeclaration")
+            return result.get("data")
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                return None
+            raise
+
+    async def create_app_encryption_declaration(
+        self,
+        build_id: str,
+        uses_encryption: bool,
+        is_exempt: bool = True,
+    ) -> dict[str, Any]:
+        """Create an encryption declaration for a build.
+
+        Args:
+            build_id: The build ID
+            uses_encryption: Whether the app uses encryption
+            is_exempt: Whether encryption is exempt (standard HTTPS, etc.)
+
+        Returns:
+            Created app encryption declaration resource
+        """
+        # If not using encryption or exempt, set appropriate values
+        if not uses_encryption:
+            code_value = "NONE"
+        elif is_exempt:
+            code_value = "EXEMPT"
+        else:
+            code_value = "CONTAINS_PROPRIETARY_CRYPTOGRAPHY"
+
+        data = {
+            "data": {
+                "type": "appEncryptionDeclarations",
+                "attributes": {
+                    "usesEncryption": uses_encryption,
+                    "codeValue": code_value,
+                },
+                "relationships": {"build": {"data": {"type": "builds", "id": build_id}}},
+            }
+        }
+        return await self.post("appEncryptionDeclarations", data)
+
+    async def submit_for_beta_review(
+        self,
+        build_id: str,
+    ) -> dict[str, Any]:
+        """Submit a build for beta app review.
+
+        Args:
+            build_id: The build ID
+
+        Returns:
+            Beta app review submission resource
+        """
+        data = {
+            "data": {
+                "type": "betaAppReviewSubmissions",
+                "relationships": {"build": {"data": {"type": "builds", "id": build_id}}},
+            }
+        }
+        return await self.post("betaAppReviewSubmissions", data)
+
+    # Beta Groups
+
+    async def list_beta_groups(
+        self,
+        app_id: str,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """List beta groups for an app.
+
+        Args:
+            app_id: The app ID
+            limit: Maximum number of groups to return
+
+        Returns:
+            List of beta group resources
+        """
+        result = await self.get(
+            f"apps/{app_id}/betaGroups",
+            {"limit": limit},
+        )
+        return result.get("data", [])  # type: ignore[no-any-return]
+
+    async def get_beta_group(self, group_id: str) -> dict[str, Any]:
+        """Get beta group details.
+
+        Args:
+            group_id: The beta group ID
+
+        Returns:
+            Beta group resource
+        """
+        result = await self.get(f"betaGroups/{group_id}")
+        return result.get("data", {})  # type: ignore[no-any-return]
+
+    async def create_beta_group(
+        self,
+        app_id: str,
+        name: str,
+        is_internal: bool = False,
+        public_link_enabled: bool = False,
+        public_link_limit: int | None = None,
+        feedback_enabled: bool = True,
+    ) -> dict[str, Any]:
+        """Create a beta group.
+
+        Args:
+            app_id: The app ID
+            name: Group name
+            is_internal: Whether this is an internal group
+            public_link_enabled: Enable public TestFlight link
+            public_link_limit: Max testers via public link (None = unlimited)
+            feedback_enabled: Allow testers to send feedback
+
+        Returns:
+            Created beta group resource
+        """
+        attributes: dict[str, Any] = {
+            "name": name,
+            "isInternalGroup": is_internal,
+            "publicLinkEnabled": public_link_enabled,
+            "feedbackEnabled": feedback_enabled,
+        }
+        if public_link_limit is not None:
+            attributes["publicLinkLimit"] = public_link_limit
+
+        data = {
+            "data": {
+                "type": "betaGroups",
+                "attributes": attributes,
+                "relationships": {"app": {"data": {"type": "apps", "id": app_id}}},
+            }
+        }
+        return await self.post("betaGroups", data)
+
+    async def update_beta_group(
+        self,
+        group_id: str,
+        name: str | None = None,
+        public_link_enabled: bool | None = None,
+        public_link_limit: int | None = None,
+        feedback_enabled: bool | None = None,
+    ) -> dict[str, Any]:
+        """Update a beta group.
+
+        Args:
+            group_id: The beta group ID
+            name: New group name
+            public_link_enabled: Enable/disable public link
+            public_link_limit: Max testers via public link
+            feedback_enabled: Allow testers to send feedback
+
+        Returns:
+            Updated beta group resource
+        """
+        attributes: dict[str, Any] = {}
+        if name is not None:
+            attributes["name"] = name
+        if public_link_enabled is not None:
+            attributes["publicLinkEnabled"] = public_link_enabled
+        if public_link_limit is not None:
+            attributes["publicLinkLimit"] = public_link_limit
+        if feedback_enabled is not None:
+            attributes["feedbackEnabled"] = feedback_enabled
+
+        data = {
+            "data": {
+                "type": "betaGroups",
+                "id": group_id,
+                "attributes": attributes,
+            }
+        }
+        return await self.patch(f"betaGroups/{group_id}", data)
+
+    async def delete_beta_group(self, group_id: str) -> bool:
+        """Delete a beta group.
+
+        Args:
+            group_id: The beta group ID
+
+        Returns:
+            True if deleted successfully
+        """
+        return await self.delete(f"betaGroups/{group_id}")
+
+    async def add_builds_to_beta_group(
+        self,
+        group_id: str,
+        build_ids: list[str],
+    ) -> None:
+        """Add builds to a beta group.
+
+        Args:
+            group_id: The beta group ID
+            build_ids: List of build IDs to add
+        """
+        data = {"data": [{"type": "builds", "id": bid} for bid in build_ids]}
+        await self.post(f"betaGroups/{group_id}/relationships/builds", data)
+
+    # Beta Testers
+
+    async def list_beta_testers(
+        self,
+        app_id: str | None = None,
+        email: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """List beta testers.
+
+        Args:
+            app_id: Filter by app ID
+            email: Filter by email
+            limit: Maximum number of testers to return
+
+        Returns:
+            List of beta tester resources
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if app_id:
+            params["filter[apps]"] = app_id
+        if email:
+            params["filter[email]"] = email
+
+        result = await self.get("betaTesters", params)
+        return result.get("data", [])  # type: ignore[no-any-return]
+
+    async def get_beta_tester(self, tester_id: str) -> dict[str, Any]:
+        """Get beta tester details.
+
+        Args:
+            tester_id: The beta tester ID
+
+        Returns:
+            Beta tester resource
+        """
+        result = await self.get(f"betaTesters/{tester_id}")
+        return result.get("data", {})  # type: ignore[no-any-return]
+
+    async def create_beta_tester(
+        self,
+        email: str,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        group_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Create a beta tester.
+
+        Args:
+            email: Tester email address
+            first_name: Tester first name
+            last_name: Tester last name
+            group_ids: Beta group IDs to add tester to
+
+        Returns:
+            Created beta tester resource
+        """
+        attributes: dict[str, Any] = {"email": email}
+        if first_name:
+            attributes["firstName"] = first_name
+        if last_name:
+            attributes["lastName"] = last_name
+
+        data: dict[str, Any] = {
+            "data": {
+                "type": "betaTesters",
+                "attributes": attributes,
+            }
+        }
+
+        if group_ids:
+            data["data"]["relationships"] = {
+                "betaGroups": {"data": [{"type": "betaGroups", "id": gid} for gid in group_ids]}
+            }
+
+        return await self.post("betaTesters", data)
+
+    async def delete_beta_tester(self, tester_id: str) -> bool:
+        """Delete a beta tester.
+
+        Args:
+            tester_id: The beta tester ID
+
+        Returns:
+            True if deleted successfully
+        """
+        return await self.delete(f"betaTesters/{tester_id}")
+
+    async def add_beta_tester_to_groups(
+        self,
+        tester_id: str,
+        group_ids: list[str],
+    ) -> None:
+        """Add a beta tester to groups.
+
+        Args:
+            tester_id: The beta tester ID
+            group_ids: List of group IDs to add tester to
+        """
+        data = {"data": [{"type": "betaGroups", "id": gid} for gid in group_ids]}
+        await self.post(f"betaTesters/{tester_id}/relationships/betaGroups", data)
+
+    async def remove_beta_tester_from_groups(
+        self,
+        tester_id: str,
+        group_ids: list[str],
+    ) -> None:
+        """Remove a beta tester from groups.
+
+        Args:
+            tester_id: The beta tester ID
+            group_ids: List of group IDs to remove tester from
+        """
+        data = {"data": [{"type": "betaGroups", "id": gid} for gid in group_ids]}
+        # DELETE with body for relationship removal
+        client = await self._get_client()
+        response = await client.request(
+            "DELETE",
+            f"betaTesters/{tester_id}/relationships/betaGroups",
+            headers=self._headers(),
+            json=data,
+        )
+        response.raise_for_status()
+
+    # Build Beta Details (auto-notify settings)
+
+    async def get_build_beta_details(self, build_id: str) -> dict[str, Any]:
+        """Get build beta details (auto-notify settings).
+
+        Args:
+            build_id: The build ID
+
+        Returns:
+            Build beta detail resource
+        """
+        result = await self.get(f"builds/{build_id}/buildBetaDetail")
+        return result.get("data", {})  # type: ignore[no-any-return]
+
+    async def update_build_beta_details(
+        self,
+        build_beta_detail_id: str,
+        auto_notify_enabled: bool | None = None,
+    ) -> dict[str, Any]:
+        """Update build beta details.
+
+        Args:
+            build_beta_detail_id: The build beta detail ID
+            auto_notify_enabled: Whether to auto-notify testers
+
+        Returns:
+            Updated build beta detail resource
+        """
+        attributes: dict[str, Any] = {}
+        if auto_notify_enabled is not None:
+            attributes["autoNotifyEnabled"] = auto_notify_enabled
+
+        data = {
+            "data": {
+                "type": "buildBetaDetails",
+                "id": build_beta_detail_id,
+                "attributes": attributes,
+            }
+        }
+        return await self.patch(f"buildBetaDetails/{build_beta_detail_id}", data)
+
     async def list_subscription_localizations(self, subscription_id: str) -> list[dict[str, Any]]:
         """List localizations for a subscription."""
         result = await self.get(f"subscriptions/{subscription_id}/subscriptionLocalizations")

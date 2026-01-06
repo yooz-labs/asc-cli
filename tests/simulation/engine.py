@@ -35,6 +35,29 @@ from tests.simulation.routes.subscriptions import (
     handle_update_subscription,
 )
 from tests.simulation.routes.territories import handle_list_territories
+from tests.simulation.routes.testflight import (
+    handle_add_beta_tester_to_groups,
+    handle_add_builds_to_beta_group,
+    handle_create_app_encryption_declaration,
+    handle_create_beta_app_review_submission,
+    handle_create_beta_build_localization,
+    handle_create_beta_group,
+    handle_create_beta_tester,
+    handle_delete_beta_group,
+    handle_delete_beta_tester,
+    handle_get_beta_group,
+    handle_get_beta_tester,
+    handle_get_build_beta_details,
+    handle_get_build_encryption_declaration,
+    handle_list_beta_build_localizations,
+    handle_list_beta_groups,
+    handle_list_beta_testers,
+    handle_list_builds,
+    handle_remove_beta_tester_from_groups,
+    handle_update_beta_build_localization,
+    handle_update_beta_group,
+    handle_update_build_beta_details,
+)
 from tests.simulation.state import StateManager
 
 
@@ -295,4 +318,103 @@ class ASCSimulator:
         # Territories
         mock.get(f"{self.BASE_URL}/territories").mock(
             side_effect=self._wrap_handler(handle_list_territories)
+        )
+
+        # =====================================================================
+        # TestFlight Routes
+        # =====================================================================
+
+        # Builds - uses /builds with filter[app] query param
+        mock.get(url__regex=rf"{re.escape(self.BASE_URL)}/builds(\?.*)?$").mock(
+            side_effect=self._wrap_handler(handle_list_builds)
+        )
+
+        # Beta Build Localizations
+        mock.get(
+            url__regex=rf"{re.escape(self.BASE_URL)}/builds/(?P<build_id>[^/]+)/betaBuildLocalizations$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(handle_list_beta_build_localizations, "build_id")
+        )
+        mock.post(f"{self.BASE_URL}/betaBuildLocalizations").mock(
+            side_effect=self._wrap_post_handler(handle_create_beta_build_localization)
+        )
+        mock.patch(
+            url__regex=rf"{re.escape(self.BASE_URL)}/betaBuildLocalizations/(?P<localization_id>[^/]+)$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(
+                handle_update_beta_build_localization, "localization_id"
+            )
+        )
+
+        # App Encryption Declarations
+        mock.get(
+            url__regex=rf"{re.escape(self.BASE_URL)}/builds/(?P<build_id>[^/]+)/appEncryptionDeclaration$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(
+                handle_get_build_encryption_declaration, "build_id"
+            )
+        )
+        mock.post(f"{self.BASE_URL}/appEncryptionDeclarations").mock(
+            side_effect=self._wrap_post_handler(handle_create_app_encryption_declaration)
+        )
+
+        # Beta App Review Submissions
+        mock.post(f"{self.BASE_URL}/betaAppReviewSubmissions").mock(
+            side_effect=self._wrap_post_handler(handle_create_beta_app_review_submission)
+        )
+
+        # Beta Groups - allow query params with (\?.*)?
+        mock.get(
+            url__regex=rf"{re.escape(self.BASE_URL)}/apps/(?P<app_id>[^/]+)/betaGroups(\?.*)?$"
+        ).mock(side_effect=self._wrap_handler_with_id(handle_list_beta_groups, "app_id"))
+        mock.get(url__regex=rf"{re.escape(self.BASE_URL)}/betaGroups/(?P<group_id>[^/]+)$").mock(
+            side_effect=self._wrap_handler_with_id(handle_get_beta_group, "group_id")
+        )
+        mock.post(f"{self.BASE_URL}/betaGroups").mock(
+            side_effect=self._wrap_post_handler(handle_create_beta_group)
+        )
+        mock.patch(url__regex=rf"{re.escape(self.BASE_URL)}/betaGroups/(?P<group_id>[^/]+)$").mock(
+            side_effect=self._wrap_handler_with_id(handle_update_beta_group, "group_id")
+        )
+        mock.delete(url__regex=rf"{re.escape(self.BASE_URL)}/betaGroups/(?P<group_id>[^/]+)$").mock(
+            side_effect=self._wrap_handler_with_id(handle_delete_beta_group, "group_id")
+        )
+        mock.post(
+            url__regex=rf"{re.escape(self.BASE_URL)}/betaGroups/(?P<group_id>[^/]+)/relationships/builds$"
+        ).mock(side_effect=self._wrap_handler_with_id(handle_add_builds_to_beta_group, "group_id"))
+
+        # Beta Testers
+        mock.get(f"{self.BASE_URL}/betaTesters").mock(
+            side_effect=self._wrap_handler(handle_list_beta_testers)
+        )
+        mock.get(url__regex=rf"{re.escape(self.BASE_URL)}/betaTesters/(?P<tester_id>[^/]+)$").mock(
+            side_effect=self._wrap_handler_with_id(handle_get_beta_tester, "tester_id")
+        )
+        mock.post(f"{self.BASE_URL}/betaTesters").mock(
+            side_effect=self._wrap_post_handler(handle_create_beta_tester)
+        )
+        mock.delete(
+            url__regex=rf"{re.escape(self.BASE_URL)}/betaTesters/(?P<tester_id>[^/]+)$"
+        ).mock(side_effect=self._wrap_handler_with_id(handle_delete_beta_tester, "tester_id"))
+        mock.post(
+            url__regex=rf"{re.escape(self.BASE_URL)}/betaTesters/(?P<tester_id>[^/]+)/relationships/betaGroups$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(handle_add_beta_tester_to_groups, "tester_id")
+        )
+        mock.delete(
+            url__regex=rf"{re.escape(self.BASE_URL)}/betaTesters/(?P<tester_id>[^/]+)/relationships/betaGroups$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(
+                handle_remove_beta_tester_from_groups, "tester_id"
+            )
+        )
+
+        # Build Beta Details
+        mock.get(
+            url__regex=rf"{re.escape(self.BASE_URL)}/builds/(?P<build_id>[^/]+)/buildBetaDetail$"
+        ).mock(side_effect=self._wrap_handler_with_id(handle_get_build_beta_details, "build_id"))
+        mock.patch(
+            url__regex=rf"{re.escape(self.BASE_URL)}/buildBetaDetails/(?P<details_id>[^/]+)$"
+        ).mock(
+            side_effect=self._wrap_handler_with_id(handle_update_build_beta_details, "details_id")
         )
