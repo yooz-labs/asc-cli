@@ -268,7 +268,19 @@ class StateManager:
         price_point_id: str | None = None,
     ) -> dict[str, Any]:
         """Add an introductory offer to state."""
-        offer = {
+        relationships: dict[str, Any] = {
+            "subscription": {
+                "data": {"type": "subscriptions", "id": subscription_id},
+            },
+            "territory": {
+                "data": {"type": "territories", "id": territory_id},
+            },
+        }
+        if price_point_id:
+            relationships["subscriptionPricePoint"] = {
+                "data": {"type": "subscriptionPricePoints", "id": price_point_id},
+            }
+        offer: dict[str, Any] = {
             "id": offer_id,
             "type": "subscriptionIntroductoryOffers",
             "attributes": {
@@ -276,19 +288,8 @@ class StateManager:
                 "duration": duration,
                 "numberOfPeriods": number_of_periods,
             },
-            "relationships": {
-                "subscription": {
-                    "data": {"type": "subscriptions", "id": subscription_id},
-                },
-                "territory": {
-                    "data": {"type": "territories", "id": territory_id},
-                },
-            },
+            "relationships": relationships,
         }
-        if price_point_id:
-            offer["relationships"]["subscriptionPricePoint"] = {
-                "data": {"type": "subscriptionPricePoints", "id": price_point_id},
-            }
         self.introductory_offers[offer_id] = offer
         self.subscription_offers_map.setdefault(subscription_id, []).append(offer_id)
         return offer

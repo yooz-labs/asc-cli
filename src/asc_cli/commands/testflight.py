@@ -1,7 +1,9 @@
 """TestFlight management commands."""
 
 import asyncio
+from collections.abc import Coroutine
 from pathlib import Path
+from typing import Any, TypeVar
 
 import typer
 from rich.console import Console
@@ -21,8 +23,10 @@ app.add_typer(builds_app, name="builds")
 app.add_typer(groups_app, name="groups")
 app.add_typer(testers_app, name="testers")
 
+T = TypeVar("T")
 
-def run_async(coro):
+
+def run_async(coro: Coroutine[Any, Any, T]) -> T:
     """Run an async function synchronously."""
     return asyncio.run(coro)
 
@@ -39,7 +43,7 @@ def list_builds(
 ) -> None:
     """List TestFlight builds."""
 
-    async def _list_builds():
+    async def _list_builds() -> None:
         client = AppStoreConnectClient()
         try:
             # Get app first
@@ -100,7 +104,7 @@ def update_build(
             raise typer.Exit(1)
         whats_new = whats_new_file.read_text().strip()
 
-    async def _update_build():
+    async def _update_build() -> None:
         client = AppStoreConnectClient()
         try:
             # Get app
@@ -154,7 +158,7 @@ def set_encryption(
 ) -> None:
     """Set encryption declaration for a build."""
 
-    async def _set_encryption():
+    async def _set_encryption() -> None:
         client = AppStoreConnectClient()
         try:
             # Get app
@@ -201,7 +205,7 @@ def submit_build(
 ) -> None:
     """Submit a build for TestFlight beta review."""
 
-    async def _submit_build():
+    async def _submit_build() -> None:
         client = AppStoreConnectClient()
         try:
             # Get app
@@ -251,7 +255,7 @@ def list_groups(
 ) -> None:
     """List beta groups."""
 
-    async def _list_groups():
+    async def _list_groups() -> None:
         client = AppStoreConnectClient()
         try:
             app_data = await client.get_app(bundle_id)
@@ -300,7 +304,7 @@ def create_group(
 ) -> None:
     """Create a beta group."""
 
-    async def _create_group():
+    async def _create_group() -> None:
         client = AppStoreConnectClient()
         try:
             app_data = await client.get_app(bundle_id)
@@ -345,7 +349,7 @@ def delete_group(
             console.print("[yellow]Cancelled[/yellow]")
             return
 
-    async def _delete_group():
+    async def _delete_group() -> None:
         client = AppStoreConnectClient()
         try:
             success = await client.delete_beta_group(group_id)
@@ -368,7 +372,7 @@ def add_build_to_group(
 ) -> None:
     """Add a build to a beta group."""
 
-    async def _add_build():
+    async def _add_build() -> None:
         client = AppStoreConnectClient()
         try:
             await client.add_builds_to_beta_group(group_id, [build_id])
@@ -394,7 +398,7 @@ def list_testers(
 ) -> None:
     """List beta testers."""
 
-    async def _list_testers():
+    async def _list_testers() -> None:
         client = AppStoreConnectClient()
         try:
             app_id = None
@@ -444,7 +448,7 @@ def add_tester(
 ) -> None:
     """Add a beta tester."""
 
-    async def _add_tester():
+    async def _add_tester() -> None:
         client = AppStoreConnectClient()
         try:
             group_ids = [group] if group else None
@@ -477,7 +481,7 @@ def remove_tester(
             console.print("[yellow]Cancelled[/yellow]")
             return
 
-    async def _remove_tester():
+    async def _remove_tester() -> None:
         client = AppStoreConnectClient()
         try:
             success = await client.delete_beta_tester(tester_id)
@@ -500,7 +504,7 @@ def add_tester_to_group(
 ) -> None:
     """Add a tester to a beta group."""
 
-    async def _add_to_group():
+    async def _add_to_group() -> None:
         client = AppStoreConnectClient()
         try:
             await client.add_beta_tester_to_groups(tester_id, [group_id])
@@ -520,7 +524,7 @@ def remove_tester_from_group(
 ) -> None:
     """Remove a tester from a beta group."""
 
-    async def _remove_from_group():
+    async def _remove_from_group() -> None:
         client = AppStoreConnectClient()
         try:
             await client.remove_beta_tester_from_groups(tester_id, [group_id])

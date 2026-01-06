@@ -214,7 +214,7 @@ def handle_get_build_encryption_declaration(
             )
 
     # No declaration found - return empty
-    return httpx.Response(200, json=build_response(None))
+    return httpx.Response(200, json={"data": None})
 
 
 def handle_create_app_encryption_declaration(
