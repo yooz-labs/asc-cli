@@ -1,14 +1,14 @@
 # asc-cli
 
-A powerful command-line interface for Apple App Store Connect API.
+A command-line interface for the Apple App Store Connect API.
 
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE.md)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![codecov](https://codecov.io/github/yooz-labs/asc-cli/graph/badge.svg?token=8XGCPL63LP)](https://codecov.io/github/yooz-labs/asc-cli)
 
 ## Overview
 
-`asc-cli` brings App Store Connect to your terminal. Manage subscriptions, pricing, TestFlight, and more without leaving the command line.
+`asc-cli` brings App Store Connect to your terminal. Manage subscriptions, pricing, TestFlight, and apps without leaving the command line. It's a generic developer utility, useful to anyone shipping iOS / macOS / tvOS / visionOS apps, not specific to Yooz.
 
 ```bash
 # Configure pricing for all territories
@@ -26,23 +26,23 @@ asc apps submit --app "My App" --version 1.0.0
 
 ## Features
 
-- **Subscriptions** - Create, configure, and manage auto-renewable subscriptions
-- **Pricing** - Set prices across 175 territories with a single command
-- **Introductory Offers** - Configure free trials, pay-as-you-go, and pay-up-front offers
-- **Promotional Offers** - Manage promotional pricing campaigns
-- **TestFlight** - Manage builds, beta groups, and testers
-- **App Management** - Submit apps, manage versions, and more
-- **Bulk Operations** - Apply changes across multiple products/territories
+- **Subscriptions** - Create, configure, and manage auto-renewable subscriptions.
+- **Pricing** - Set prices across 175 territories with a single command.
+- **Introductory offers** - Configure free trials, pay-as-you-go, and pay-up-front offers.
+- **Promotional offers** - Manage promotional pricing campaigns.
+- **TestFlight** - Manage builds, beta groups, and testers.
+- **App management** - Submit apps, manage versions, and more.
+- **Bulk operations** - Apply changes across multiple products / territories from YAML.
 
 ## Installation
 
-### Using pip
+### pip
 
 ```bash
 pip install asc-cli
 ```
 
-### Using Homebrew (coming soon)
+### Homebrew (coming soon)
 
 ```bash
 brew install yooz-labs/tap/asc-cli
@@ -56,17 +56,17 @@ cd asc-cli
 pip install -e .
 ```
 
-## Quick Start
+## Quick start
 
-### 1. Get API Credentials
+### 1. Get API credentials
 
-1. Go to [App Store Connect](https://appstoreconnect.apple.com)
-2. Navigate to **Users and Access** → **Integrations** → **App Store Connect API**
-3. Generate a new key with **Admin** or **App Manager** role
-4. Download the `.p8` private key file
-5. Note the **Key ID** and **Issuer ID**
+1. Go to [App Store Connect](https://appstoreconnect.apple.com).
+2. Navigate to **Users and Access** → **Integrations** → **App Store Connect API**.
+3. Generate a new key with the **Admin** or **App Manager** role.
+4. Download the `.p8` private key file.
+5. Note the **Key ID** and **Issuer ID**.
 
-### 2. Configure Authentication
+### 2. Configure authentication
 
 ```bash
 # Interactive setup
@@ -78,7 +78,7 @@ export ASC_KEY_ID="your-key-id"
 export ASC_PRIVATE_KEY_PATH="~/.asc/AuthKey_XXXXX.p8"
 ```
 
-### 3. Start Using
+### 3. Start using
 
 ```bash
 # List your apps
@@ -91,7 +91,7 @@ asc subscriptions list --app "My App"
 asc subscriptions pricing set --subscription "pro.monthly" --price 2.99
 ```
 
-## Command Reference
+## Command reference
 
 ### Authentication
 
@@ -134,16 +134,16 @@ asc testflight testers add                # Add a tester
 asc testflight testers remove             # Remove a tester
 ```
 
-### Bulk Operations
+### Bulk operations
 
 ```bash
 asc bulk pricing --file pricing.yaml      # Apply pricing from YAML
 asc bulk offers --file offers.yaml        # Apply offers from YAML
 ```
 
-## Configuration Files
+## Configuration files
 
-### Pricing Configuration (pricing.yaml)
+### Pricing configuration (pricing.yaml)
 
 ```yaml
 subscriptions:
@@ -161,7 +161,7 @@ subscriptions:
       - DEU
 ```
 
-### Offers Configuration (offers.yaml)
+### Offers configuration (offers.yaml)
 
 ```yaml
 introductory_offers:
@@ -177,7 +177,7 @@ introductory_offers:
     territories: all
 ```
 
-## Environment Variables
+## Environment variables
 
 | Variable | Description |
 |----------|-------------|
@@ -186,20 +186,22 @@ introductory_offers:
 | `ASC_PRIVATE_KEY_PATH` | Path to .p8 private key file |
 | `ASC_PRIVATE_KEY` | Private key contents (alternative to path) |
 
-## Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
-
 ## Legal
 
 This tool is not affiliated with, endorsed by, or sponsored by Apple Inc. App Store Connect is a trademark of Apple Inc.
 
 Users are responsible for complying with Apple's [App Store Connect API Terms of Service](https://developer.apple.com/support/terms/).
 
-## Documentation
-
-Full documentation available at [docs.yooz.live/tools/asc-cli](https://docs.yooz.live/tools/asc-cli).
-
 ## License
 
-BSD 3-Clause License - see [LICENSE](LICENSE) for details.
+Licensed under the [Apache License 2.0](LICENSE.md). asc-cli is a generic developer utility; the permissive license matches the audience. The full ecosystem licensing strategy lives in [yooz-engine/LICENSING.md](https://github.com/yooz-labs/yooz-engine/blob/main/LICENSING.md).
+
+The repository was previously distributed under BSD-3-Clause; the relicense to Apache 2.0 was made by the sole copyright holder (Yooz Labs Inc.) and applies to all versions going forward.
+
+## Contributing
+
+PRs welcome. Sign your commits with `Signed-off-by: Your Name <you@example.com>` (DCO style); see [`CONTRIBUTING.md`](CONTRIBUTING.md). Security issues: see [`SECURITY.md`](SECURITY.md).
+
+---
+
+*Maintained by [Yooz Labs](https://github.com/yooz-labs). Contact: dev@yooz.info.*
